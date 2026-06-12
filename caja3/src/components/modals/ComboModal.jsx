@@ -94,14 +94,27 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
       const group = comboData.selection_groups[groupName];
       if (!group) return;
       const options = group.options || [];
+      const isSauceGroup = groupName.toLowerCase().includes('salsa');
       if (Array.isArray(selection)) {
-        selection.forEach(productId => {
+        selection.forEach((productId, idx) => {
           const opt = options.find(o => o.product_id === productId);
-          if (opt) total += (opt.price_adjustment || 0);
+          if (opt) {
+            if (isSauceGroup) {
+              total += idx === 0 ? 0 : (opt.price_adjustment || 500);
+            } else {
+              total += (opt.price_adjustment || 0);
+            }
+          }
         });
       } else if (selection) {
         const opt = options.find(o => o.product_id === selection);
-        if (opt) total += (opt.price_adjustment || 0);
+        if (opt) {
+          if (isSauceGroup) {
+            total += 0; // 1ra salsa gratis
+          } else {
+            total += (opt.price_adjustment || 0);
+          }
+        }
       }
     });
     return total;

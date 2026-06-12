@@ -3356,6 +3356,77 @@ export default function App() {
                             Eliminar
                           </button>
                         </div>
+                        {isCombo && item.component_customizations && item.component_customizations.some(c => c.customizations && c.customizations.length > 0) && (
+                          <div className="mt-1 text-xs">
+                            {item.component_customizations.filter(c => c.customizations && c.customizations.length > 0).map((comp, ci) => {
+                              const items = comp.customizations.map((cust, custIdx) => {
+                                if (cust.isSauce) return `${cust.name}${custIdx === 0 ? ' (1ra gratis)' : ' (+$500)'}`;
+                                return `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`;
+                              });
+                              return <div key={ci} className="text-purple-700 font-medium">• {comp.label}: {items.join(', ')}</div>;
+                            })}
+                          </div>
+                        )}
+                        
+                        {isCombo && item.component_customizations && (
+                          <div className="mt-2 space-y-2">
+                            {item.component_customizations.map((comp, ci) => {
+                              if (comp.no_salsas) return null;
+                              const compSauces = (comp.customizations || []).filter(c => c.isSauce);
+                              const saucePrice = compSauces.length <= 1 ? 0 : (compSauces.length - 1) * 500;
+                              return (
+                                <div key={ci} className="bg-gray-50 rounded-md p-2">
+                                  <div className="flex items-start gap-2 mb-1">
+                                    {comp.image_url && <img src={comp.image_url} alt={comp.label} className="w-8 h-8 object-cover rounded-md flex-shrink-0" onError={(e) => { e.target.style.display = 'none'; }} />}
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-xs font-medium text-gray-700 truncate">{comp.label}</p>
+                                    </div>
+                                  </div>
+                                  {compSauces.length > 0 && (
+                                    <div className="flex flex-wrap gap-1 mb-1">
+                                      {compSauces.map((s, si) => (
+                                        <span key={si} className="text-[10px] text-orange-600 font-medium">• {s.name}</span>
+                                      ))}
+                                      <span className="text-[10px] text-orange-500 font-medium ml-1">
+                                        {saucePrice === 0 ? '(1ra gratis)' : `(+$${saucePrice.toLocaleString('es-CL')})`}
+                                      </span>
+                                    </div>
+                                  )}
+                                  <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+                                    {[...(comboItems.salsas || [])].sort((a, b) => {
+                                      const order = ['MAYO KRAFT', 'MAYO AJO', 'KETCHUP', 'MOSTAZA', 'MAYONESA DE AJO', 'CRAZY CHICKEN', 'BBQ'];
+                                      const idxA = order.indexOf(a.name.toUpperCase());
+                                      const idxB = order.indexOf(b.name.toUpperCase());
+                                      if (idxA === -1 && idxB === -1) return a.name.localeCompare(b.name);
+                                      if (idxA === -1) return 1; if (idxB === -1) return -1;
+                                      return idxA - idxB;
+                                    }).map(salsa => {
+                                      const sel = compSauces.some(s => s.id === salsa.id);
+                                      return (
+                                        <button key={salsa.id} onClick={() => {
+                                          const newComps = [...item.component_customizations];
+                                          const newComp = { ...newComps[ci] };
+                                          const currentSauces = (newComp.customizations || []).filter(c => c.isSauce);
+                                          const otherCustoms = (newComp.customizations || []).filter(c => !c.isSauce);
+                                          if (sel) {
+                                            newComp.customizations = [...otherCustoms, ...currentSauces.filter(s => s.id !== salsa.id)];
+                                          } else {
+                                            newComp.customizations = [...otherCustoms, ...currentSauces, { ...salsa, quantity: 1, isSauce: true }];
+                                          }
+                                          newComps[ci] = newComp;
+                                          handleUpdateComponentSauces(item.cartItemId, rebuildSaucesForComponent(newComps));
+                                        }}
+                                          className={`text-[10px] px-2 py-0.5 rounded-md border font-medium flex-shrink-0 ${sel ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-600 border-gray-300'}`}>
+                                          {salsa.name}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -4184,77 +4255,6 @@ export default function App() {
                                 </div>
                             )}
                             
-                            {isCombo && item.component_customizations && item.component_customizations.some(c => c.customizations && c.customizations.length > 0) && (
-                              <div className="mt-1 text-xs">
-                                {item.component_customizations.filter(c => c.customizations && c.customizations.length > 0).map((comp, ci) => {
-                                  const items = comp.customizations.map((cust, custIdx) => {
-                                    if (cust.isSauce) return `${cust.name}${custIdx === 0 ? ' (1ra gratis)' : ' (+$500)'}`;
-                                    return `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`;
-                                  });
-                                  return <div key={ci} className="text-purple-700 font-medium">• {comp.label}: {items.join(', ')}</div>;
-                                })}
-                              </div>
-                            )}
-                            
-                            {isCombo && item.component_customizations && (
-                              <div className="mt-2 space-y-2">
-                                {item.component_customizations.map((comp, ci) => {
-                                  if (comp.no_salsas) return null;
-                                  const compSauces = (comp.customizations || []).filter(c => c.isSauce);
-                                  const saucePrice = compSauces.length <= 1 ? 0 : (compSauces.length - 1) * 500;
-                                  return (
-                                    <div key={ci} className="bg-gray-50 rounded-md p-2">
-                                      <div className="flex items-start gap-2 mb-1">
-                                        {comp.image_url && <img src={comp.image_url} alt={comp.label} className="w-8 h-8 object-cover rounded-md flex-shrink-0" onError={(e) => { e.target.style.display = 'none'; }} />}
-                                        <div className="flex-1 min-w-0">
-                                          <p className="text-xs font-medium text-gray-700 truncate">{comp.label}</p>
-                                        </div>
-                                      </div>
-                                      {compSauces.length > 0 && (
-                                        <div className="flex flex-wrap gap-1 mb-1">
-                                          {compSauces.map((s, si) => (
-                                            <span key={si} className="text-[10px] text-orange-600 font-medium">• {s.name}</span>
-                                          ))}
-                                          <span className="text-[10px] text-orange-500 font-medium ml-1">
-                                            {saucePrice === 0 ? '(1ra gratis)' : `(+$${saucePrice.toLocaleString('es-CL')})`}
-                                          </span>
-                                        </div>
-                                      )}
-                                      <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
-                                        {[...(comboItems.salsas || [])].sort((a, b) => {
-                                          const order = ['MAYO KRAFT', 'MAYO AJO', 'KETCHUP', 'MOSTAZA', 'MAYONESA DE AJO', 'CRAZY CHICKEN', 'BBQ'];
-                                          const idxA = order.indexOf(a.name.toUpperCase());
-                                          const idxB = order.indexOf(b.name.toUpperCase());
-                                          if (idxA === -1 && idxB === -1) return a.name.localeCompare(b.name);
-                                          if (idxA === -1) return 1; if (idxB === -1) return -1;
-                                          return idxA - idxB;
-                                        }).map(salsa => {
-                                          const sel = compSauces.some(s => s.id === salsa.id);
-                                          return (
-                                            <button key={salsa.id} onClick={() => {
-                                              const newComps = [...item.component_customizations];
-                                              const newComp = { ...newComps[ci] };
-                                              const currentSauces = (newComp.customizations || []).filter(c => c.isSauce);
-                                              const otherCustoms = (newComp.customizations || []).filter(c => !c.isSauce);
-                                              if (sel) {
-                                                newComp.customizations = [...otherCustoms, ...currentSauces.filter(s => s.id !== salsa.id)];
-                                              } else {
-                                                newComp.customizations = [...otherCustoms, ...currentSauces, { ...salsa, quantity: 1, isSauce: true }];
-                                              }
-                                              newComps[ci] = newComp;
-                                              handleUpdateComponentSauces(item.cartItemId, rebuildSaucesForComponent(newComps));
-                                            }}
-                                              className={`text-[10px] px-2 py-0.5 rounded-md border font-medium flex-shrink-0 ${sel ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-600 border-gray-300'}`}>
-                                              {salsa.name}
-                                            </button>
-                                          );
-                                        })}
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            )}
                           </div>
                           </div>
                         );
