@@ -106,8 +106,8 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess, showGuestOption = false, o
   };
 
   return (
-    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-slate-900 w-full max-w-md max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden animate-slide-up flex flex-col" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center sm:p-4" onClick={onClose}>
+      <div className="bg-slate-900 w-full h-screen sm:h-auto sm:max-w-md sm:max-h-[90vh] sm:rounded-2xl shadow-2xl overflow-hidden animate-slide-up flex flex-col" onClick={(e) => e.stopPropagation()}>
         
         {/* Header */}
         <div className="bg-gradient-to-r from-orange-600 to-red-600 p-6 relative">
@@ -115,7 +115,7 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess, showGuestOption = false, o
             <X size={24} />
           </button>
           <div className="flex items-center gap-3 mb-2">
-            <img src="https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/WhatsApp%20Image%202026-05-20%20at%2019.50.28.jpeg" alt="La Ruta 11" className="w-12 h-12" />
+            <img src="https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/WhatsApp%20Image%202026-05-20%20at%2019.50.28.jpeg" alt="La Ruta 11" className="w-16 h-16 sm:w-12 sm:h-12 p-1 rounded-md bg-white/20" />
             <div>
               <h2 className="text-2xl font-black text-white">LA RUTA 11</h2>
               <p className="text-orange-100 text-sm">Tu cuenta, tus beneficios</p>
