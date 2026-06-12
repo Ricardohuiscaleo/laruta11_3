@@ -168,11 +168,45 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
       basePrice: combo.sale_price || combo.price,
       selections: detailedSelections,
       fixed_items: comboData.fixed_items || [],
-      quantity: 1
+      quantity: 1,
+      component_customizations: buildComponentCustomizations()
     };
     
     onAddToCart(comboWithSelections);
     onClose();
+  };
+
+  const buildComponentCustomizations = () => {
+    const components = [];
+    if (comboData.fixed_items) {
+      let counter = 0;
+      comboData.fixed_items.forEach((fixedItem, fi) => {
+        for (let i = 0; i < fixedItem.quantity; i++) {
+          counter++;
+          components.push({
+            type: 'fixed',
+            fixed_index: fi,
+            component_index: i,
+            product_name: `${fixedItem.product_name}`,
+            label: `${fixedItem.product_name} ${counter}`,
+            customizations: []
+          });
+        }
+      });
+    }
+    Object.entries(detailedSelections).forEach(([groupName, items]) => {
+      items.forEach((sel, i) => {
+        components.push({
+          type: 'selection',
+          group: groupName,
+          product_id: sel.id,
+          product_name: sel.name,
+          label: `${sel.name}`,
+          customizations: []
+        });
+      });
+    });
+    return components;
   };
 
   if (!isOpen) return null;

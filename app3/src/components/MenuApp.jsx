@@ -115,7 +115,7 @@ const ImageFullscreenModal = ({ product, total, onClose }) => {
 
 
 
-const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartTotal, onCheckout, onCustomizeProduct, statusData, nearbyTrucks = [], salsas = [], onUpdateCartItemSauces, comboItems }) => {
+const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartTotal, onCheckout, onCustomizeProduct, statusData, nearbyTrucks = [], salsas = [], onUpdateCartItemSauces, comboItems, onUpdateComponentSauces }) => {
   const [shake, setShake] = useState(false);
   const [lastDeleted, setLastDeleted] = useState(null);
   const [showUndo, setShowUndo] = useState(false);
@@ -192,6 +192,31 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
     const itemSauces = getSaucesForItem(item);
     if (itemSauces.length === 0) return 0;
     return (itemSauces.length - 1) * SAUCE_PRICE;
+  };
+
+  const getComponentSauces = (comboItem, componentIndex) => {
+    if (!comboItem.component_customizations || !comboItem.component_customizations[componentIndex]) return [];
+    return comboItem.component_customizations[componentIndex].customizations?.filter(c => c.isSauce) || [];
+  };
+
+  const isComponentSauceSelected = (comboItem, componentIndex, sauceId) => {
+    return getComponentSauces(comboItem, componentIndex).some(s => s.id === sauceId);
+  };
+
+  const handleComponentSauceToggle = (comboItem, componentIndex, salsa) => {
+    if (!comboItem.component_customizations) return;
+    const components = [...comboItem.component_customizations];
+    const comp = { ...components[componentIndex] };
+    const currentSauces = (comp.customizations || []).filter(c => c.isSauce);
+    const otherCustoms = (comp.customizations || []).filter(c => !c.isSauce);
+    
+    if (currentSauces.some(s => s.id === salsa.id)) {
+      comp.customizations = [...otherCustoms, ...currentSauces.filter(s => s.id !== salsa.id)];
+    } else {
+      comp.customizations = [...otherCustoms, ...currentSauces, { ...salsa, quantity: 1, isSauce: true }];
+    }
+    components[componentIndex] = comp;
+    onUpdateComponentSauces(comboItem.cartItemId, components);
   };
 
   const handleCheckout = () => {
@@ -326,22 +351,60 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                         {(isCombo && (item.fixed_items || item.selections)) && (
                           <>
                             <p className="text-[10px] font-semibold text-gray-500 mb-1">ESTE COMBO INCLUYE:</p>
-                            <div className="space-y-0.5 mb-2">
-                              {item.fixed_items && item.fixed_items.map((fixedItem, idx) => (
-                                <p key={idx} className="text-[11px] text-gray-600">• {item.quantity}x {fixedItem.product_name || fixedItem.name}</p>
-                              ))}
-                              {item.selections && Object.entries(item.selections).map(([group, selection]) => {
-                                if (Array.isArray(selection)) {
-                                  return selection.map((sel, idx) => (
-                                    <p key={`${group}-${idx}`} className="text-[11px] text-gray-600">• {item.quantity}x {sel.name}</p>
-                                  ));
-                                } else {
+                            {item.component_customizations ? (
+                              <div className="space-y-2 mb-2">
+                                {item.component_customizations.map((comp, ci) => {
+                                  const compSauces = getComponentSauces(item, ci);
                                   return (
-                                    <p key={group} className="text-[11px] text-gray-600">• {item.quantity}x {selection.name}</p>
+                                    <div key={ci} className="bg-gray-50 rounded-md p-2">
+                                      <p className="text-xs font-medium text-gray-700 mb-1">{comp.label}</p>
+                                      {compSauces.length > 0 && (
+                                        <div className="flex flex-wrap gap-1 mb-1">
+                                          {compSauces.map((s, si) => (
+                                            <span key={si} className="text-[10px] text-orange-600 font-medium">• {s.name}</span>
+                                          ))}
+                                        </div>
+                                      )}
+                                      <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+                                        {[...salsas].sort((a, b) => {
+                                          const order = ['MAYO KRAFT', 'MAYO AJO', 'KETCHUP', 'MOSTAZA', 'MAYONESA DE AJO', 'CRAZY CHICKEN', 'BBQ'];
+                                          const idxA = order.indexOf(a.name.toUpperCase());
+                                          const idxB = order.indexOf(b.name.toUpperCase());
+                                          if (idxA === -1 && idxB === -1) return a.name.localeCompare(b.name);
+                                          if (idxA === -1) return 1; if (idxB === -1) return -1;
+                                          return idxA - idxB;
+                                        }).map(salsa => {
+                                          const sel = isComponentSauceSelected(item, ci, salsa.id);
+                                          return (
+                                            <button key={salsa.id} onClick={() => handleComponentSauceToggle(item, ci, salsa)}
+                                              className={`text-[10px] px-2 py-0.5 rounded-md border font-medium flex-shrink-0 ${sel ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-600 border-gray-300'}`}>
+                                              {salsa.name}
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
                                   );
-                                }
-                              })}
-                            </div>
+                                })}
+                              </div>
+                            ) : (
+                              <div className="space-y-0.5 mb-2">
+                                {item.fixed_items && item.fixed_items.map((fixedItem, idx) => (
+                                  <p key={idx} className="text-[11px] text-gray-600">• {item.quantity}x {fixedItem.product_name || fixedItem.name}</p>
+                                ))}
+                                {item.selections && Object.entries(item.selections).map(([group, selection]) => {
+                                  if (Array.isArray(selection)) {
+                                    return selection.map((sel, idx) => (
+                                      <p key={`${group}-${idx}`} className="text-[11px] text-gray-600">• {item.quantity}x {sel.name}</p>
+                                    ));
+                                  } else {
+                                    return (
+                                      <p key={group} className="text-[11px] text-gray-600">• {item.quantity}x {selection.name}</p>
+                                    );
+                                  }
+                                })}
+                              </div>
+                            )}
                           </>
                         )}
                         {hasCustomizations && (item.customizations.filter(c => !c.isSauce).length > 0 || getSaucesForItem(item).length > 0) && (
@@ -2946,6 +3009,13 @@ export default function App() {
             setCart(prevCart => prevCart.map(item =>
               item.cartItemId === cartItemId
                 ? { ...item, customizations: updatedCustomizations && updatedCustomizations.length > 0 ? updatedCustomizations : null }
+                : item
+            ));
+          }}
+          onUpdateComponentSauces={(cartItemId, components) => {
+            setCart(prevCart => prevCart.map(item =>
+              item.cartItemId === cartItemId
+                ? { ...item, component_customizations: components }
                 : item
             ));
           }}
