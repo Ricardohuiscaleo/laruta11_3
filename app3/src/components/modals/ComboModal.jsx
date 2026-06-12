@@ -178,18 +178,33 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
 
   const buildComponentCustomizations = (detailedSelections) => {
     const components = [];
+    const costItemKeys = ['aceite', 'caja ', 'bolsa', 'empaque', 'funda', 'envase'];
     if (comboData.fixed_items) {
-      let counter = 0;
+      const grouped = {};
       comboData.fixed_items.forEach((fixedItem, fi) => {
+        const name = fixedItem.product_name?.toLowerCase() || '';
+        if (costItemKeys.some(k => name.includes(k))) return;
+        const key = fixedItem.product_name + '|' + fixedItem.product_id;
+        if (!grouped[key]) {
+          grouped[key] = { ...fixedItem, quantity: 0, fixed_index: fi };
+        }
+        grouped[key].quantity += fixedItem.quantity;
+      });
+      let counter = 0;
+      Object.values(grouped).forEach((fixedItem) => {
         for (let i = 0; i < fixedItem.quantity; i++) {
           counter++;
+          const name = fixedItem.product_name?.toLowerCase() || '';
+          const no_salsas = ['bilz', 'coca', 'sprite', 'fanta', 'agua', 'bebida', 'jugo', 'té ', 'café'].some(k => name.includes(k));
           components.push({
             type: 'fixed',
-            fixed_index: fi,
+            fixed_index: fixedItem.fixed_index,
             component_index: i,
-            product_name: `${fixedItem.product_name}`,
-            label: `${fixedItem.product_name} ${counter}`,
-            customizations: []
+            product_name: fixedItem.product_name,
+            quantity: fixedItem.quantity,
+            label: `${fixedItem.product_name}`,
+            customizations: [],
+            no_salsas
           });
         }
       });
@@ -197,13 +212,16 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
     if (detailedSelections) {
       Object.entries(detailedSelections).forEach(([groupName, items]) => {
       items.forEach((sel, i) => {
+        const name = sel.name?.toLowerCase() || '';
+        const no_salsas = ['bilz', 'coca', 'sprite', 'fanta', 'agua', 'bebida', 'jugo', 'té ', 'café'].some(k => name.includes(k));
         components.push({
           type: 'selection',
           group: groupName,
           product_id: sel.id,
           product_name: sel.name,
           label: `${sel.name}`,
-          customizations: []
+          customizations: [],
+          no_salsas
         });
       });
     });

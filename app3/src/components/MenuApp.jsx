@@ -365,6 +365,7 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                                           ))}
                                         </div>
                                       )}
+                                      {!comp.no_salsas && (
                                       <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
                                         {[...salsas].sort((a, b) => {
                                           const order = ['MAYO KRAFT', 'MAYO AJO', 'KETCHUP', 'MOSTAZA', 'MAYONESA DE AJO', 'CRAZY CHICKEN', 'BBQ'];
@@ -383,6 +384,7 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                                           );
                                         })}
                                       </div>
+                                    )}
                                     </div>
                                   );
                                 })}
