@@ -70,7 +70,7 @@ const SwipeableModal = ({ isOpen, onClose, title, children, className = '' }) =>
     if (!isOpen) return null;
     
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-50 flex justify-center items-end animate-fade-in" onClick={onClose}>
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm z-[60] flex justify-center items-end animate-fade-in" onClick={onClose}>
             <div 
                 ref={modalRef}
                 className={`bg-white w-full max-w-2xl max-h-[75vh] rounded-t-2xl flex flex-col transition-transform duration-300 ease-out ${className}`}
