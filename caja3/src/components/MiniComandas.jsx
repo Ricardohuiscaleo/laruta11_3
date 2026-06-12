@@ -47,6 +47,23 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
 
 
 
+  const getCompSauces = (compCust, fixedIndex) => {
+    if (!Array.isArray(compCust)) return [];
+    const comp = compCust.find(c => c.type === 'fixed' && c.fixed_index === fixedIndex);
+    return comp ? (comp.customizations || []).filter(c => c.isSauce) : [];
+  };
+
+  const getSelSauces = (compCust, group, productId) => {
+    if (!Array.isArray(compCust)) return [];
+    const comp = compCust.find(c => c.type === 'selection' && c.group === group && c.product_id === productId);
+    return comp ? (comp.customizations || []).filter(c => c.isSauce) : [];
+  };
+
+  const formatSauces = (sauces) => {
+    if (!sauces || sauces.length === 0) return '';
+    return sauces.map((s, i) => `${s.name}${i === 0 ? ' (1ra gratis)' : ' (+$500)'}`).join(', ');
+  };
+
   const loadOrders = async () => {
     try {
       const response = await fetch(`/api/tuu/get_comandas_v2.php?t=${Date.now()}`);
@@ -474,9 +491,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
   const renderProductDetails = (item, orderId) => {
     const comboData = item.combo_data ? (typeof item.combo_data === 'string' ? JSON.parse(item.combo_data) : item.combo_data) : null;
     const isCombo = item.item_type === 'combo' && comboData;
-    if (isCombo && comboData?.component_customizations) {
-      console.log('DEBUG component_customizations:', JSON.stringify(comboData.component_customizations));
-    }
+
     const isChecked = !!checkedItems[`${orderId}-${item.id}`];
     const imageUrl = item.image_url || item.image || `https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/2.jpg`;
 
@@ -563,6 +578,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                 <div className="font-bold text-blue-700 mb-0.5">Incluye:</div>
                 {comboData.fixed_items.map((fixed, idx) => {
                   const itemKey = `${orderId}-fixed-${item.id}-${idx}`;
+                  const sauces = getCompSauces(comboData.component_customizations, idx);
                   return (
                     <label key={idx} className="flex items-center gap-1 cursor-pointer">
                       <input
@@ -573,6 +589,9 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                       />
                       <span className={checkedItems[itemKey] ? 'line-through text-gray-400' : 'text-gray-700'}>
                         {item.quantity * (fixed.quantity || 1)}x {fixed.product_name || fixed.name}
+                        {sauces.length > 0 && (
+                          <span className="text-orange-500 font-medium"> → {formatSauces(sauces)}</span>
+                        )}
                       </span>
                     </label>
                   );
@@ -588,6 +607,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                     if (!sel || !sel.name) return null;
                     const itemKey = `${orderId}-sel-${item.id}-${group}-${sidx}`;
                     const selImageUrl = sel.image_url || sel.image || `https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/2.jpg`;
+                    const sauces = getSelSauces(comboData.component_customizations, group, sel.id);
                     return (
                       <label key={`${idx}-${sidx}`} className="flex items-center gap-1 cursor-pointer mb-0.5">
                         <input
@@ -604,6 +624,9 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                         />
                         <span className={`text-[9px] ${checkedItems[itemKey] ? 'line-through text-gray-400' : 'text-gray-700'}`}>
                           {item.quantity}x {sel.name}
+                          {sauces.length > 0 && (
+                            <span className="text-orange-500 font-medium"> → {formatSauces(sauces)}</span>
+                          )}
                         </span>
                       </label>
                     );
@@ -636,35 +659,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
           </div>
         )}
 
-        {comboData && comboData.component_customizations && comboData.component_customizations.some(c => c.customizations && c.customizations.length > 0) && (
-          <div className="mt-1 bg-purple-50 rounded p-1 border border-purple-300">
-            <div className="text-[9px] font-bold text-purple-700 mb-0.5">🎯 Personalizado:</div>
-            {comboData.component_customizations.filter(c => c.customizations && c.customizations.length > 0).map((comp, ci) => {
-              const items = comp.customizations.map((cust, custIdx) => {
-                const itemKey = `${orderId}-comp-${item.id}-${ci}-${custIdx}`;
-                return (
-                  <label key={custIdx} className="flex items-center gap-1 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={!!checkedItems[itemKey]}
-                      onChange={e => setCheckedItems(prev => ({ ...prev, [itemKey]: e.target.checked }))}
-                      className="w-2.5 h-2.5 accent-purple-600"
-                    />
-                    <span className={`text-[9px] font-bold ${checkedItems[itemKey] ? 'line-through text-purple-300' : 'text-purple-800'}`}>
-                      {cust.isSauce ? `${cust.name}${custIdx === 0 ? ' (1ra gratis)' : ' (+$500)'}` : `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`}
-                    </span>
-                  </label>
-                );
-              });
-              return (
-                <div key={ci} className="mb-0.5">
-                  <div className="text-[8px] font-semibold text-purple-600">{comp.label || comp.product_name || comp.name || 'Producto'}:</div>
-                  <div className="space-y-0.5">{items}</div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+
       </div>
     );
   };
@@ -874,20 +869,34 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                   </label>
                   {!isChecked && (
                     <div className="ml-16 text-[9px] space-y-0.5 pb-1">
-                      {isCombo && comboData.fixed_items && comboData.fixed_items.map((fixed, idx) => (
-                        <div key={idx} className="text-blue-700">• {item.quantity * (fixed.quantity || 1)}x {fixed.product_name || fixed.name}</div>
-                      ))}
+                      {isCombo && comboData.fixed_items && comboData.fixed_items.map((fixed, idx) => {
+                        const sauces = getCompSauces(comboData.component_customizations, idx);
+                        return (
+                          <div key={idx} className="text-blue-700">
+                            • {item.quantity * (fixed.quantity || 1)}x {fixed.product_name || fixed.name}
+                            {sauces.length > 0 && (
+                              <span className="text-orange-500 font-medium"> → {formatSauces(sauces)}</span>
+                            )}
+                          </div>
+                        );
+                      })}
                       {isCombo && comboData.selections && Object.entries(comboData.selections).map(([group, sel]) => {
                         const arr = Array.isArray(sel) ? sel : [sel];
                         return arr.map((s, sidx) => {
                           if (!s?.name) return null;
                           const selImg = s.image_url || s.image || null;
+                          const sauces = getSelSauces(comboData.component_customizations, group, s.id);
                           return (
                             <div key={`${group}-${sidx}`} className="flex items-center gap-1.5 text-purple-700">
                               {selImg && (
                                 <img src={selImg} alt={s.name} className="w-8 h-8 rounded object-cover flex-shrink-0 border border-purple-300" onError={(e) => { e.target.style.display = 'none'; }} />
                               )}
-                              <span className="text-[11px] font-medium">• {item.quantity}x {s.name}</span>
+                              <span className="text-[11px] font-medium">
+                                • {item.quantity}x {s.name}
+                                {sauces.length > 0 && (
+                                  <span className="text-orange-500 font-medium"> → {formatSauces(sauces)}</span>
+                                )}
+                              </span>
                             </div>
                           );
                         });
@@ -895,19 +904,6 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                       {comboData && comboData.customizations && comboData.customizations.length > 0 && comboData.customizations.map((c, idx) => (
                         <div key={idx} className="text-orange-700 font-bold">+ {c.quantity || item.quantity}x {c.name}</div>
                       ))}
-                      {comboData && comboData.component_customizations && comboData.component_customizations.some(c => c.customizations && c.customizations.length > 0) && (
-                        <div className="mt-0.5 text-[9px] text-purple-700">
-                          {comboData.component_customizations.filter(c => c.customizations && c.customizations.length > 0).map((comp, ci) => {
-                            const custTexts = comp.customizations.map((cust, custIdx) => {
-                              if (cust.isSauce) {
-                                return `${cust.name}${custIdx === 0 ? ' (1ra gratis)' : ' (+$500)'}`;
-                              }
-                              return `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`;
-                            });
-                            return <div key={ci}><span className="font-semibold">{comp.label || comp.product_name || comp.name}:</span> {custTexts.join(', ')}</div>;
-                          })}
-                        </div>
-                      )}
                     </div>
                   )}
                 </div>
