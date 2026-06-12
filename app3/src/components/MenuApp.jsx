@@ -2925,7 +2925,7 @@ export default function App() {
           onUpdateCartItemSauces={(cartItemId, updatedCustomizations) => {
             setCart(prevCart => prevCart.map(item =>
               item.cartItemId === cartItemId
-                ? { ...item, customizations: updatedCustomizations.length > 0 ? updatedCustomizations : null }
+                ? { ...item, customizations: updatedCustomizations && updatedCustomizations.length > 0 ? updatedCustomizations : null }
                 : item
             ));
           }}
