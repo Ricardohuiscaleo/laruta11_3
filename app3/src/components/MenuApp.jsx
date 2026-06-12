@@ -2187,7 +2187,7 @@ export default function App() {
             <div className="sm:hidden">
               {/* Fila 1: Con padding */}
               <div className="px-2">
-                {/* Fila única: Logo | Status | Menú | Búsqueda | Notificaciones | Carrito */}
+                {/* Fila única: Logo | Status | Menú | Búsqueda | Notificaciones */}
                 <div className="flex items-center justify-between gap-2">
                   {/* Logo */}
                   <img src={`https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/WhatsApp%20Image%202026-05-20%20at%2019.50.28.jpeg`} alt="La Ruta 11" className="drop-shadow-sm flex-shrink-0" style={{ width: '24px', height: '24px' }} />
@@ -2334,10 +2334,6 @@ export default function App() {
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z"/><path d="M7 9h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2z"/></svg>
                     </button>
 
-                    {/* Carrito */}
-                    <button onClick={() => { vibrate(30); setIsCartOpen(true); }} className="text-gray-600 hover:text-orange-500 transition-all p-2 flex-shrink-0" title="Carrito">
-                      <ShoppingCartIcon size={20} badge={cartItemCount} />
-                    </button>
                   </div>
 
                   {/* Spacer */}
