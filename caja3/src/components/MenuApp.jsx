@@ -1958,12 +1958,51 @@ export default function App() {
     });
   };
 
-  const handleUpdateComponentSauces = (cartIndex, components) => {
-    setCart(prevCart => {
-      const newCart = [...prevCart];
-      newCart[cartIndex] = { ...newCart[cartIndex], component_customizations: components };
-      return newCart;
+  const getComponentCustomizationsPrice = (item) => {
+    if (!item.component_customizations) return 0;
+    let total = 0;
+    item.component_customizations.forEach(comp => {
+      if (!comp.customizations) return;
+      let sauceCount = 0;
+      comp.customizations.forEach(cust => {
+        if (cust.isSauce) {
+          sauceCount++;
+          if (sauceCount > 1) total += 500;
+        } else {
+          let price = cust.price * cust.quantity;
+          if (cust.extraPrice && cust.quantity > 1) {
+            price = cust.price + (cust.quantity - 1) * cust.extraPrice;
+          }
+          total += price;
+        }
+      });
     });
+    return total;
+  };
+
+  const rebuildSaucesForComponent = (components) => {
+    return components.map(comp => {
+      if (!comp.customizations) return comp;
+      let sauceCount = 0;
+      return {
+        ...comp,
+        customizations: comp.customizations.map(c => {
+          if (c.isSauce) {
+            sauceCount++;
+            return { ...c, price: sauceCount === 1 ? 0 : 500 };
+          }
+          return c;
+        })
+      };
+    });
+  };
+
+  const handleUpdateComponentSauces = (cartItemId, components) => {
+    setCart(prevCart => prevCart.map(item =>
+      item.cartItemId === cartItemId
+        ? { ...item, component_customizations: components }
+        : item
+    ));
   };
 
   const cartSubtotal = useMemo(() => {
@@ -1980,6 +2019,8 @@ export default function App() {
         }, 0);
         itemPrice += customizationsPrice;
       }
+
+      itemPrice += getComponentCustomizationsPrice(item);
 
       return total + itemPrice;
     }, 0);
@@ -2000,6 +2041,8 @@ export default function App() {
         }, 0);
         itemPrice += customizationsPrice;
       }
+
+      itemPrice += getComponentCustomizationsPrice(item);
 
       return total + itemPrice;
     }, 0);
@@ -4199,7 +4242,7 @@ export default function App() {
                                                 newComp.customizations = [...otherCustoms, ...currentSauces, { ...salsa, quantity: 1, isSauce: true }];
                                               }
                                               newComps[ci] = newComp;
-                                              handleUpdateComponentSauces(index, newComps);
+                                              handleUpdateComponentSauces(item.cartItemId, rebuildSaucesForComponent(newComps));
                                             }}
                                               className={`text-[10px] px-2 py-0.5 rounded-md border font-medium flex-shrink-0 ${sel ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-600 border-gray-300'}`}>
                                               {salsa.name}

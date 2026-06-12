@@ -226,7 +226,7 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
       comp.customizations = [...otherCustoms, ...currentSauces, { ...salsa, quantity: 1, isSauce: true }];
     }
     components[componentIndex] = comp;
-    onUpdateComponentSauces(comboItem.cartItemId, components);
+    onUpdateComponentSauces(comboItem.cartItemId, rebuildSaucesForComponent(components));
   };
 
   const handleComponentCustomAdd = (comboItem, componentIndex, personalizarItem) => {
@@ -306,6 +306,23 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
         return { ...c, price: sauceCount === 1 ? 0 : 500 };
       }
       return c;
+    });
+  };
+
+  const rebuildSaucesForComponent = (components) => {
+    return components.map(comp => {
+      if (!comp.customizations) return comp;
+      let sauceCount = 0;
+      return {
+        ...comp,
+        customizations: comp.customizations.map(c => {
+          if (c.isSauce) {
+            sauceCount++;
+            return { ...c, price: sauceCount === 1 ? 0 : 500 };
+          }
+          return c;
+        })
+      };
     });
   };
 
@@ -1968,9 +1985,33 @@ export default function App() {
         itemPrice += customizationsPrice;
       }
 
+      itemPrice += getComponentCustomizationsPrice(item);
+
       return total + itemPrice;
     }, 0);
   }, [cart]);
+
+  const getComponentCustomizationsPrice = (item) => {
+    if (!item.component_customizations) return 0;
+    let total = 0;
+    item.component_customizations.forEach(comp => {
+      if (!comp.customizations) return;
+      let sauceCount = 0;
+      comp.customizations.forEach(cust => {
+        if (cust.isSauce) {
+          sauceCount++;
+          if (sauceCount > 1) total += 500;
+        } else {
+          let price = cust.price * cust.quantity;
+          if (cust.extraPrice && cust.quantity > 1) {
+            price = cust.price + (cust.quantity - 1) * cust.extraPrice;
+          }
+          total += price;
+        }
+      });
+    });
+    return total;
+  };
 
   const deliveryFee = useMemo(() => {
     if (customerInfo.deliveryType === 'delivery' && nearbyTrucks.length > 0) {
@@ -3330,6 +3371,7 @@ export default function App() {
                         }, 0);
                         itemTotal += customizationsTotal;
                       }
+                      itemTotal += getComponentCustomizationsPrice(item);
                       return (
                         <div key={item.cartItemId || item.id} className="py-1">
                           <div className="flex justify-between">

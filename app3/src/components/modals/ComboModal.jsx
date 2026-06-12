@@ -214,6 +214,8 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
     if (detailedSelections) {
       Object.entries(detailedSelections).forEach(([groupName, items]) => {
       items.forEach((sel, i) => {
+        const selName = sel.name?.toLowerCase() || '';
+        const no_salsas = ['bilz', 'coca', 'sprite', 'fanta', 'agua', 'bebida', 'jugo', 'té ', 'café'].some(k => selName.includes(k));
         components.push({
           type: 'selection',
           group: groupName,
@@ -222,7 +224,7 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
           label: `${sel.name}`,
           image_url: sel.image_url || null,
           customizations: [],
-          no_salsas: true
+          no_salsas
         });
       });
     });
