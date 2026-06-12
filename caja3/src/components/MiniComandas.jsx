@@ -502,6 +502,16 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
         });
       }
 
+      if (comboData && comboData.component_customizations) {
+        comboData.component_customizations.forEach((comp, ci) => {
+          if (comp.customizations) {
+            comp.customizations.forEach((_, cidx) => {
+              updates[`${orderId}-comp-${item.id}-${ci}-${cidx}`] = checked;
+            });
+          }
+        });
+      }
+
       setCheckedItems(prev => ({ ...prev, ...updates }));
     };
 
@@ -618,6 +628,36 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                     {custom.quantity || item.quantity}x {custom.name}
                   </span>
                 </label>
+              );
+            })}
+          </div>
+        )}
+
+        {comboData && comboData.component_customizations && comboData.component_customizations.some(c => c.customizations && c.customizations.length > 0) && (
+          <div className="mt-1 bg-purple-50 rounded p-1 border border-purple-300">
+            <div className="text-[9px] font-bold text-purple-700 mb-0.5">🎯 Personalizado:</div>
+            {comboData.component_customizations.filter(c => c.customizations && c.customizations.length > 0).map((comp, ci) => {
+              const items = comp.customizations.map((cust, custIdx) => {
+                const itemKey = `${orderId}-comp-${item.id}-${ci}-${custIdx}`;
+                return (
+                  <label key={custIdx} className="flex items-center gap-1 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={!!checkedItems[itemKey]}
+                      onChange={e => setCheckedItems(prev => ({ ...prev, [itemKey]: e.target.checked }))}
+                      className="w-2.5 h-2.5 accent-purple-600"
+                    />
+                    <span className={`text-[9px] font-bold ${checkedItems[itemKey] ? 'line-through text-purple-300' : 'text-purple-800'}`}>
+                      {cust.isSauce ? cust.name : `${cust.quantity || 1}x ${cust.name}`}
+                    </span>
+                  </label>
+                );
+              });
+              return (
+                <div key={ci} className="mb-0.5">
+                  <div className="text-[8px] font-semibold text-purple-600">{comp.label}:</div>
+                  <div className="space-y-0.5">{items}</div>
+                </div>
               );
             })}
           </div>

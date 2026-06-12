@@ -84,8 +84,12 @@ try {
                     $formatted_item['type'] = 'combo';
                     $formatted_item['fixed_items'] = $combo_data['fixed_items'] ?? [];
                     $formatted_item['selections'] = $combo_data['selections'] ?? [];
-                } else if (isset($combo_data['customizations'])) {
+                } 
+                if (isset($combo_data['customizations'])) {
                     $formatted_item['customizations'] = $combo_data['customizations'];
+                }
+                if (isset($combo_data['component_customizations'])) {
+                    $formatted_item['component_customizations'] = $combo_data['component_customizations'];
                 }
             }
             
