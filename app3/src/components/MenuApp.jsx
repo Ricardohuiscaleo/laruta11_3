@@ -373,7 +373,15 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                       <div className="mt-2 pt-2 border-t border-gray-100">
                         <p className="text-xs font-semibold text-gray-500 mb-1.5">AGREGAR MÁS SALSAS:</p>
                         <div className="flex gap-2 overflow-x-auto whitespace-nowrap pb-2 scrollbar-thin">
-                          {salsas.map(salsa => {
+                          {[...salsas].sort((a, b) => {
+                            const order = ['MAYO KRAFT', 'MAYO AJO', 'KETCHUP', 'MOSTAZA', 'MAYONESA DE AJO', 'CRAZY CHICKEN', 'BBQ'];
+                            const idxA = order.indexOf(a.name.toUpperCase());
+                            const idxB = order.indexOf(b.name.toUpperCase());
+                            if (idxA === -1 && idxB === -1) return a.name.localeCompare(b.name);
+                            if (idxA === -1) return 1;
+                            if (idxB === -1) return -1;
+                            return idxA - idxB;
+                          }).map(salsa => {
                             const selected = isSauceSelected(item, salsa.id);
                             const selectedCount = selected ? getSaucesForItem(item).filter(s => s.id === salsa.id).length : 0;
                             return (
