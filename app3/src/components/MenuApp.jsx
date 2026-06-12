@@ -371,7 +371,7 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                     {/* Salsas - full width */}
                     {!isCombo && shouldShowPersonalizeButton && salsas.length > 0 && (
                       <div className="mt-2 pt-2 border-t border-gray-100">
-                        <p className="text-xs font-semibold text-gray-500 mb-1.5">AGREGAR MÁS SALSAS:</p>
+                        <p className="text-xs font-semibold text-gray-500 mb-1.5">AGREGAR SALSAS:</p>
                         <div className="flex gap-2 overflow-x-auto whitespace-nowrap pb-2 scrollbar-thin">
                           {[...salsas].sort((a, b) => {
                             const order = ['MAYO KRAFT', 'MAYO AJO', 'KETCHUP', 'MOSTAZA', 'MAYONESA DE AJO', 'CRAZY CHICKEN', 'BBQ'];
