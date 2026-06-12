@@ -274,6 +274,11 @@ try {
                         $ic_id = $ic['id'] ?? null;
                         $ic_price = $ic['price'] ?? 0;
                         $ic_qty = $ic['quantity'] ?? 1;
+                        // Salsas: usar precio ya calculado (1ra gratis si aplica)
+                        if (!empty($ic['isSauce'])) {
+                            $item_customizations_total += $ic_price * $ic_qty;
+                            continue;
+                        }
                         if ($ic_id) {
                             $ic_stmt = $pdo->prepare("SELECT price, sale_price FROM products WHERE id = ?");
                             $ic_stmt->execute([$ic_id]);

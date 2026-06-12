@@ -219,25 +219,18 @@ const ProductDetailModal = ({
   const comboSubtotal = useMemo(() => {
     const allComboItems = [
       ...comboItems.papas_y_snacks,
-      ...comboItems.jugos,
-      ...comboItems.bebidas,
-      ...comboItems.salsas,
       ...comboItems.personalizar,
       ...comboItems.extras,
-      ...comboItems.empanadas,
-      ...comboItems.cafe,
-      ...comboItems.te
+      ...comboItems.empanadas
     ];
     
     return Object.entries(tempCustomizations).reduce((total, [itemId, qty]) => {
       const item = allComboItems.find(i => i.id === parseInt(itemId));
       if (!item) return total;
       
-      let itemPrice = item.price;
+      let itemPrice = item.price * qty;
       if (item.extraPrice && qty > 1) {
         itemPrice = item.price + (qty - 1) * item.extraPrice;
-      } else {
-        itemPrice = item.price * qty;
       }
       return total + itemPrice;
     }, 0);
@@ -276,11 +269,7 @@ const ProductDetailModal = ({
               getTempQuantity={getTempQuantity}
             />
 
-            <ComboSection title="Jugos" items={comboItems.jugos} sectionKey="jugos" expandedComboSections={expandedComboSections} setExpandedComboSections={setExpandedComboSections} onAddToCart={handleTempAdd} onRemoveFromCart={handleTempRemove} getProductQuantity={getProductQuantity} preventClose={preventClose} useTempCart={true} getTempQuantity={getTempQuantity} />
-            <ComboSection title="💡 ¿Agregar una bebida?" items={comboItems.bebidas} sectionKey="bebidas" expandedComboSections={expandedComboSections} setExpandedComboSections={setExpandedComboSections} onAddToCart={handleTempAdd} onRemoveFromCart={handleTempRemove} getProductQuantity={getProductQuantity} preventClose={preventClose} useTempCart={true} getTempQuantity={getTempQuantity} />
-            <ComboSection title="Café" items={comboItems.cafe} sectionKey="cafe" expandedComboSections={expandedComboSections} setExpandedComboSections={setExpandedComboSections} onAddToCart={handleTempAdd} onRemoveFromCart={handleTempRemove} getProductQuantity={getProductQuantity} preventClose={preventClose} useTempCart={true} getTempQuantity={getTempQuantity} />
-            <ComboSection title="Té" items={comboItems.te} sectionKey="te" expandedComboSections={expandedComboSections} setExpandedComboSections={setExpandedComboSections} onAddToCart={handleTempAdd} onRemoveFromCart={handleTempRemove} getProductQuantity={getProductQuantity} preventClose={preventClose} useTempCart={true} getTempQuantity={getTempQuantity} />
-            <ComboSection title="Salsas" items={comboItems.salsas} sectionKey="salsas" expandedComboSections={expandedComboSections} setExpandedComboSections={setExpandedComboSections} onAddToCart={handleTempAdd} onRemoveFromCart={handleTempRemove} getProductQuantity={getProductQuantity} preventClose={preventClose} useTempCart={true} getTempQuantity={getTempQuantity} />
+            
             {comboItems.extras && comboItems.extras.length > 0 && (
               <ComboSection title="Extras" items={comboItems.extras} isExtra={true} titleColor="text-red-600" sectionKey="extras" expandedComboSections={expandedComboSections} setExpandedComboSections={setExpandedComboSections} onAddToCart={handleTempAdd} onRemoveFromCart={handleTempRemove} getProductQuantity={getProductQuantity} preventClose={preventClose} useTempCart={true} getTempQuantity={getTempQuantity} />
             )}
@@ -298,14 +287,9 @@ const ProductDetailModal = ({
             onClick={() => {
               const allComboItems = [
                 ...comboItems.papas_y_snacks,
-                ...comboItems.jugos,
-                ...comboItems.bebidas,
-                ...comboItems.salsas,
                 ...comboItems.personalizar,
                 ...comboItems.extras,
-                ...comboItems.empanadas,
-                ...comboItems.cafe,
-                ...comboItems.te
+                ...comboItems.empanadas
               ];
               
               const customizationsArray = Object.entries(tempCustomizations)

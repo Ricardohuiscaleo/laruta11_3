@@ -1501,24 +1501,24 @@ const CheckoutApp = ({ onClose }) => {
                                   }
                                 })}
                               </div>
-                              {item.customizations && item.customizations.length > 0 && (
+                              {item.customizations && item.customizations.filter(c => !c.isSauce).length > 0 && (
                                 <div className="text-orange-600">
                                   <span className="font-semibold">Además está personalizado con: </span>
-                                  {item.customizations.map((custom, idx) => (
+                                  {item.customizations.filter(c => !c.isSauce).map((custom, idx) => (
                                     <span key={idx}>
-                                      {custom.quantity}x {custom.name} (+${(custom.price * custom.quantity).toLocaleString('es-CL')}){idx < item.customizations.length - 1 ? ', ' : ''}
+                                      {custom.quantity}x {custom.name} (+${(custom.price * custom.quantity).toLocaleString('es-CL')}){idx < item.customizations.filter(c => !c.isSauce).length - 1 ? ', ' : ''}
                                     </span>
                                   ))}
                                 </div>
                               )}
                             </div>
                           )}
-                          {!isCombo && item.customizations && item.customizations.length > 0 && (
+                          {!isCombo && item.customizations && item.customizations.filter(c => !c.isSauce).length > 0 && (
                             <div className="mt-1 text-xs text-orange-600">
                               <span className="font-semibold">Personalizado con: </span>
-                              {item.customizations.map((custom, idx) => (
+                              {item.customizations.filter(c => !c.isSauce).map((custom, idx) => (
                                 <span key={idx}>
-                                  {custom.quantity}x {custom.name} (+${(custom.price * custom.quantity).toLocaleString('es-CL')}){idx < item.customizations.length - 1 ? ', ' : ''}
+                                  {custom.quantity}x {custom.name} (+${(custom.price * custom.quantity).toLocaleString('es-CL')}){idx < item.customizations.filter(c => !c.isSauce).length - 1 ? ', ' : ''}
                                 </span>
                               ))}
                             </div>
