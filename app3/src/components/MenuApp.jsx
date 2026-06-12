@@ -282,7 +282,7 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
               return (
                 <div key={item.cartItemId} className={`rounded-md bg-white border border-gray-200 transition-all duration-300 overflow-hidden ${isRemoving ? 'opacity-0 scale-95 -translate-x-full' : 'opacity-100 scale-100 translate-x-0'
                   }`}>
-                  <div className="bg-white p-3">
+                  <div className="bg-white p-1">
                     <div className="flex items-start gap-3">
                       {item.image ? (
                         <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded-lg flex-shrink-0" loading="lazy" decoding="async" />
@@ -309,87 +309,7 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                           )}
                         </div>
 
-                        {(isCombo && item.selections) || hasCustomizations ? (
-                          <div className="mt-2 pt-2 border-t border-gray-100">
-                            {/* Items del combo */}
-                            {(isCombo && (item.fixed_items || item.selections)) && (
-                              <>
-                                <p className="text-[10px] font-semibold text-gray-500 mb-1">ESTE COMBO INCLUYE:</p>
-                                <div className="space-y-0.5 mb-2">
-                                  {item.fixed_items && item.fixed_items.map((fixedItem, idx) => (
-                                    <p key={idx} className="text-[11px] text-gray-600">• {item.quantity}x {fixedItem.product_name || fixedItem.name}</p>
-                                  ))}
-                                  {item.selections && Object.entries(item.selections).map(([group, selection]) => {
-                                    if (Array.isArray(selection)) {
-                                      return selection.map((sel, idx) => (
-                                        <p key={`${group}-${idx}`} className="text-[11px] text-gray-600">• {item.quantity}x {sel.name}</p>
-                                      ));
-                                    } else {
-                                      return (
-                                        <p key={group} className="text-[11px] text-gray-600">• {item.quantity}x {selection.name}</p>
-                                      );
-                                    }
-                                  })}
-                                </div>
-                              </>
-                            )}
-                            {/* Personalizaciones con precio adicional (excluye salsas) */}
-                            {hasCustomizations && item.customizations.filter(c => !c.isSauce).length > 0 && (
-                              <>
-                                <p className="text-[10px] font-semibold text-orange-600 mb-1">{isCombo ? 'ADEMÁS ESTÁ PERSONALIZADO CON:' : 'PERSONALIZADO CON:'}</p>
-                                <div className="space-y-0.5">
-                                  {item.customizations.filter(c => !c.isSauce).map((custom, idx) => (
-                                    <p key={idx} className="text-[11px] text-orange-600 font-medium">• {custom.quantity}x {custom.name} (+${(custom.price * custom.quantity).toLocaleString('es-CL')})</p>
-                                  ))}
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        ) : null}
-                        {/* Salsas selector */}
-                        {!isCombo && shouldShowPersonalizeButton && salsas.length > 0 && (
-                          <div className="mt-2 pt-2 border-t border-gray-100">
-                            <p className="text-[10px] font-semibold text-gray-500 mb-1.5">SALSAS:</p>
-                            <div className="flex flex-wrap gap-1.5">
-                              {salsas.map(salsa => {
-                                const selected = isSauceSelected(item, salsa.id);
-                                const selectedCount = selected ? getSaucesForItem(item).filter(s => s.id === salsa.id).length : 0;
-                                return (
-                                  <button
-                                    key={salsa.id}
-                                    onClick={() => {
-                                      const currentSauces = getSaucesForItem(item);
-                                      const otherCustomizations = (item.customizations || []).filter(c => !c.isSauce);
-                                      if (selected) {
-                                        const updated = currentSauces.filter(s => s.id !== salsa.id);
-                                        const rebuilt = rebuildSaucesForItem([...otherCustomizations, ...updated]);
-                                        onUpdateCartItemSauces(item.cartItemId, rebuilt);
-                                      } else {
-                                        const newSauce = { ...salsa, quantity: 1, isSauce: true };
-                                        const rebuilt = rebuildSaucesForItem([...otherCustomizations, ...currentSauces, newSauce]);
-                                        onUpdateCartItemSauces(item.cartItemId, rebuilt);
-                                      }
-                                    }}
-                                    className={`text-[10px] px-2.5 py-1 rounded-md border font-medium transition-all ${
-                                      selected
-                                        ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
-                                        : 'bg-white text-gray-600 border-gray-300 hover:border-orange-400 hover:text-orange-600'
-                                    }`}
-                                  >
-                                    {salsa.name}
-                                    {selected && selectedCount > 1 && <span className="ml-1 text-[9px]">×{selectedCount}</span>}
-                                  </button>
-                                );
-                              })}
-                              {getSaucesForItem(item).length > 0 && (
-                                <span className="text-[9px] text-orange-600 self-center ml-1 font-medium">
-                                  {getSaucesForItem(item).length === 1 ? '1ra gratis' : `+$${((getSaucesForItem(item).length - 1) * SAUCE_PRICE).toLocaleString('es-CL')}`}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                        </div>
                       {/* Botón eliminar directo */}
                       <button
                         onClick={() => handleDeleteClick(item.cartItemId)}
@@ -399,7 +319,87 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                         <X size={20} />
                       </button>
                     </div>
-                    {/* Expandable personalizar items */}
+                    {/* Full-width sections below the flex row */}
+                    {/* Personalizaciones / combo items */}
+                    {(isCombo && item.selections) || hasCustomizations ? (
+                      <div className="mt-2 pt-2 border-t border-gray-100">
+                        {(isCombo && (item.fixed_items || item.selections)) && (
+                          <>
+                            <p className="text-[10px] font-semibold text-gray-500 mb-1">ESTE COMBO INCLUYE:</p>
+                            <div className="space-y-0.5 mb-2">
+                              {item.fixed_items && item.fixed_items.map((fixedItem, idx) => (
+                                <p key={idx} className="text-[11px] text-gray-600">• {item.quantity}x {fixedItem.product_name || fixedItem.name}</p>
+                              ))}
+                              {item.selections && Object.entries(item.selections).map(([group, selection]) => {
+                                if (Array.isArray(selection)) {
+                                  return selection.map((sel, idx) => (
+                                    <p key={`${group}-${idx}`} className="text-[11px] text-gray-600">• {item.quantity}x {sel.name}</p>
+                                  ));
+                                } else {
+                                  return (
+                                    <p key={group} className="text-[11px] text-gray-600">• {item.quantity}x {selection.name}</p>
+                                  );
+                                }
+                              })}
+                            </div>
+                          </>
+                        )}
+                        {hasCustomizations && item.customizations.filter(c => !c.isSauce).length > 0 && (
+                          <>
+                            <p className="text-[10px] font-semibold text-orange-600 mb-1">{isCombo ? 'ADEMÁS ESTÁ PERSONALIZADO CON:' : 'PERSONALIZADO CON:'}</p>
+                            <div className="space-y-0.5">
+                              {item.customizations.filter(c => !c.isSauce).map((custom, idx) => (
+                                <p key={idx} className="text-[11px] text-orange-600 font-medium">• {custom.quantity}x {custom.name} (+${(custom.price * custom.quantity).toLocaleString('es-CL')})</p>
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ) : null}
+                    {/* Salsas - full width */}
+                    {!isCombo && shouldShowPersonalizeButton && salsas.length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-gray-100">
+                        <p className="text-[10px] font-semibold text-gray-500 mb-1.5">SALSAS:</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {salsas.map(salsa => {
+                            const selected = isSauceSelected(item, salsa.id);
+                            const selectedCount = selected ? getSaucesForItem(item).filter(s => s.id === salsa.id).length : 0;
+                            return (
+                              <button
+                                key={salsa.id}
+                                onClick={() => {
+                                  const currentSauces = getSaucesForItem(item);
+                                  const otherCustomizations = (item.customizations || []).filter(c => !c.isSauce);
+                                  if (selected) {
+                                    const updated = currentSauces.filter(s => s.id !== salsa.id);
+                                    const rebuilt = rebuildSaucesForItem([...otherCustomizations, ...updated]);
+                                    onUpdateCartItemSauces(item.cartItemId, rebuilt);
+                                  } else {
+                                    const newSauce = { ...salsa, quantity: 1, isSauce: true };
+                                    const rebuilt = rebuildSaucesForItem([...otherCustomizations, ...currentSauces, newSauce]);
+                                    onUpdateCartItemSauces(item.cartItemId, rebuilt);
+                                  }
+                                }}
+                                className={`text-[10px] px-2.5 py-1 rounded-md border font-medium transition-all ${
+                                  selected
+                                    ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
+                                    : 'bg-white text-gray-600 border-gray-300 hover:border-orange-400 hover:text-orange-600'
+                                }`}
+                              >
+                                {salsa.name}
+                                {selected && selectedCount > 1 && <span className="ml-1 text-[9px]">×{selectedCount}</span>}
+                              </button>
+                            );
+                          })}
+                          {getSaucesForItem(item).length > 0 && (
+                            <span className="text-[9px] text-orange-600 self-center ml-1 font-medium">
+                              {getSaucesForItem(item).length === 1 ? '1ra gratis' : `+$${((getSaucesForItem(item).length - 1) * SAUCE_PRICE).toLocaleString('es-CL')}`}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {/* Expandable personalizar extras */}
                     {shouldShowPersonalizeButton && expandedItems.has(item.cartItemId) && personalizarItems.length > 0 && (
                       <div className="mt-2 pt-3 border-t border-gray-200 space-y-1 animate-slide-up">
                         <p className="text-[10px] font-semibold text-gray-500 mb-1.5">EXTRAS:</p>
