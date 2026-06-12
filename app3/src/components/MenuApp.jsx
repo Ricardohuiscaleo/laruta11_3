@@ -3948,7 +3948,7 @@ export default function App() {
                 <span className="text-[9px] font-bold text-center">Hablemos</span>
               </button>
 
-              <!-- Carrito movido a FAB flotante -->
+              {/* Carrito movido a FAB flotante */}
             </div>
           </div>
         </nav>
