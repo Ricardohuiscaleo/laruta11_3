@@ -3949,7 +3949,7 @@ export default function App() {
               </button>
 
               {/* Carrito */}
-              <button onClick={() => { vibrate(30); setIsCartOpen(true); }} className="flex flex-col items-center justify-center gap-1 py-2 px-2 text-white bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 rounded-xl transition-all active:scale-95 min-w-[60px] h-[60px] shadow-md">
+              <button onClick={() => { vibrate(30); setIsCartOpen(true); }} className="flex flex-col items-center justify-center gap-1 py-2 px-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-all active:scale-95 min-w-[60px] h-[60px]">
                 <div className="w-5 h-5 flex items-center justify-center">
                   <ShoppingCartIcon size={20} badge={cartItemCount} />
                 </div>
