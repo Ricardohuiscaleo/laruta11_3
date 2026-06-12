@@ -262,6 +262,16 @@ const CheckoutApp = ({ onClose }) => {
           }, 0);
           itemTotal += customizationsTotal;
         }
+        // Agregar costo de customizaciones por componente (combos)
+        if (item.component_customizations) {
+          item.component_customizations.forEach(comp => {
+            if (comp.customizations) {
+              comp.customizations.forEach(custom => {
+                itemTotal += (custom.price || 0) * (custom.quantity || 1);
+              });
+            }
+          });
+        }
         return total + itemTotal;
       }, 0);
       setCartSubtotal(subtotal);
@@ -1508,6 +1518,20 @@ const CheckoutApp = ({ onClose }) => {
                                     <span key={idx}>
                                       {custom.quantity}x {custom.name} (+${(custom.price * custom.quantity).toLocaleString('es-CL')}){idx < item.customizations.filter(c => !c.isSauce).length - 1 ? ', ' : ''}
                                     </span>
+                                  ))}
+                                </div>
+                              )}
+                              {isCombo && item.component_customizations && item.component_customizations.some(c => c.customizations && c.customizations.length > 0) && (
+                                <div className="mt-1">
+                                  {item.component_customizations.filter(c => c.customizations && c.customizations.length > 0).map((comp, ci) => (
+                                    <div key={ci} className="text-xs text-orange-600">
+                                      <span className="font-semibold">{comp.label}: </span>
+                                      {comp.customizations.map((custom, idx) => (
+                                        <span key={idx}>
+                                          {custom.isSauce ? custom.name : `${custom.quantity}x ${custom.name}`}{custom.isSauce ? (idx === 0 ? ' (1ra gratis)' : ` (+$500)`) : ` (+$${(custom.price * custom.quantity).toLocaleString('es-CL')})`}{idx < comp.customizations.length - 1 ? ', ' : ''}
+                                        </span>
+                                      ))}
+                                    </div>
                                   ))}
                                 </div>
                               )}
