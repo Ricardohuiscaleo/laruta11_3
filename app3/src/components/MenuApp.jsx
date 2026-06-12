@@ -3894,11 +3894,11 @@ export default function App() {
           </>
         )}
 
-        {/* Carrito flotante móvil - Siempre visible */}
-        <div className="sm:hidden fixed bottom-20 right-4 z-50">
+        {/* Carrito flotante móvil - Solo visible cuando nav oculto */}
+        <div className={`sm:hidden fixed bottom-6 right-4 z-50 transition-all duration-300 ${!isNavVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
           <button
             onClick={() => { vibrate(30); setIsCartOpen(true); }}
-            className="w-14 h-14 bg-gradient-to-r from-orange-500 to-red-600 rounded-full shadow-lg flex items-center justify-center text-white transition-all hover:scale-110 active:scale-95 hover:shadow-xl"
+            className="w-14 h-14 bg-white rounded-full flex items-center justify-center text-gray-700 transition-all hover:scale-110 active:scale-95 shadow-[6px_6px_12px_rgba(0,0,0,0.1),-6px_-6px_12px_rgba(255,255,255,0.8),inset_2px_2px_4px_rgba(0,0,0,0.05)] border border-gray-100"
           >
             <ShoppingCartIcon size={24} badge={cartItemCount} />
           </button>
@@ -3948,7 +3948,13 @@ export default function App() {
                 <span className="text-[9px] font-bold text-center">Hablemos</span>
               </button>
 
-              {/* Carrito movido a FAB flotante */}
+              {/* Carrito */}
+              <button onClick={() => { vibrate(30); setIsCartOpen(true); }} className="flex flex-col items-center justify-center gap-1 py-2 px-2 text-white bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 rounded-xl transition-all active:scale-95 min-w-[60px] h-[60px] shadow-md">
+                <div className="w-5 h-5 flex items-center justify-center">
+                  <ShoppingCartIcon size={20} badge={cartItemCount} />
+                </div>
+                <span className="text-[9px] font-bold text-center">Carrito</span>
+              </button>
             </div>
           </div>
         </nav>
