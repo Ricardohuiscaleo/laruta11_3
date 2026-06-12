@@ -433,25 +433,28 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                                         </div>
                                       )}
                                       {expandedItems.has(`${item.cartItemId}-comp-${ci}`) && personalizarItems.length > 0 && (
-                                        <div className="mt-1 mb-1.5 pt-1 border-t border-gray-200 space-y-0.5">
-                                          <p className="text-[9px] font-semibold text-gray-500">EXTRAS:</p>
+                                        <div className="mt-1 mb-1.5 pt-1 border-t border-gray-200 space-y-1">
+                                          <p className="text-xs font-semibold text-gray-500">EXTRAS:</p>
                                           {personalizarItems.map(pi => {
                                             const qty = getComponentCustoms(item, ci).filter(c => c.id === pi.id).reduce((s, c) => s + c.quantity, 0);
                                             const extrasNonSauce = getComponentCustoms(item, ci);
                                             const totalExtras = extrasNonSauce.reduce((s, c) => s + c.quantity, 0);
                                             return (
-                                              <div key={pi.id} className="flex items-center justify-between bg-white rounded-md px-2 py-1">
-                                                <div className="min-w-0 flex-1">
-                                                  <p className="text-[10px] font-medium text-gray-800 truncate">{pi.name}</p>
-                                                  <p className="text-[9px] text-orange-500 font-medium">${pi.price.toLocaleString('es-CL')}</p>
+                                              <div key={pi.id} className="flex items-center justify-between bg-white rounded-md px-3 py-2">
+                                                <div className="flex items-center gap-2 min-w-0 flex-1">
+                                                  {pi.image && <img src={pi.image} alt={pi.name} className="w-10 h-10 object-cover rounded-md flex-shrink-0" />}
+                                                  <div className="min-w-0">
+                                                    <p className="text-sm font-medium text-gray-800 truncate">{pi.name}</p>
+                                                    <p className="text-xs text-orange-500 font-medium">${pi.price.toLocaleString('es-CL')}</p>
+                                                  </div>
                                                 </div>
-                                                <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+                                                <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
                                                   <button onClick={() => handleComponentCustomRemove(item, ci, pi)}
-                                                    className="w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-700 font-bold text-xs">−</button>
-                                                  <span className="w-4 text-center font-bold text-xs text-gray-700">{qty}</span>
+                                                    className="w-7 h-7 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-700 font-bold text-sm">−</button>
+                                                  <span className="w-5 text-center font-bold text-sm text-gray-700">{qty}</span>
                                                   <button onClick={() => handleComponentCustomAdd(item, ci, pi)}
                                                     disabled={totalExtras >= 5}
-                                                    className="w-5 h-5 rounded-full bg-orange-500 hover:bg-orange-600 disabled:opacity-30 flex items-center justify-center text-white font-bold text-xs">+</button>
+                                                    className="w-7 h-7 rounded-full bg-orange-500 hover:bg-orange-600 disabled:opacity-30 flex items-center justify-center text-white font-bold text-sm">+</button>
                                                 </div>
                                               </div>
                                             );
