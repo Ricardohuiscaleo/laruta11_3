@@ -344,14 +344,26 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                             </div>
                           </>
                         )}
-                        {hasCustomizations && item.customizations.filter(c => !c.isSauce).length > 0 && (
+                        {hasCustomizations && (item.customizations.filter(c => !c.isSauce).length > 0 || getSaucesForItem(item).length > 0) && (
                           <>
-                            <p className="text-[10px] font-semibold text-orange-600 mb-1">{isCombo ? 'ADEMÁS ESTÁ PERSONALIZADO CON:' : 'PERSONALIZADO CON:'}</p>
-                            <div className="space-y-0.5">
-                              {item.customizations.filter(c => !c.isSauce).map((custom, idx) => (
-                                <p key={idx} className="text-[11px] text-orange-600 font-medium">• {custom.quantity}x {custom.name} (+${(custom.price * custom.quantity).toLocaleString('es-CL')})</p>
-                              ))}
-                            </div>
+                            <p className="text-xs font-semibold text-orange-600 mb-1">{isCombo ? 'ADEMÁS ESTÁ PERSONALIZADO CON:' : 'PERSONALIZADO CON:'}</p>
+                            {item.customizations.filter(c => !c.isSauce).length > 0 && (
+                              <div className="space-y-0.5 mb-1">
+                                {item.customizations.filter(c => !c.isSauce).map((custom, idx) => (
+                                  <p key={idx} className="text-sm text-orange-600 font-medium">• {custom.quantity}x {custom.name} (+${(custom.price * custom.quantity).toLocaleString('es-CL')})</p>
+                                ))}
+                              </div>
+                            )}
+                            {getSaucesForItem(item).length > 0 && (
+                              <>
+                                <p className="text-xs font-semibold text-orange-600 mb-1">SALSAS:</p>
+                                <div className="space-y-0.5 mb-1">
+                                  {getSaucesForItem(item).map((sauce, idx) => (
+                                    <p key={idx} className="text-sm text-orange-600 font-medium">• {sauce.name} ({idx === 0 ? '1ra gratis' : `+$${SAUCE_PRICE.toLocaleString('es-CL')}`})</p>
+                                  ))}
+                                </div>
+                              </>
+                            )}
                           </>
                         )}
                       </div>
@@ -359,7 +371,7 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                     {/* Salsas - full width */}
                     {!isCombo && shouldShowPersonalizeButton && salsas.length > 0 && (
                       <div className="mt-2 pt-2 border-t border-gray-100">
-                        <p className="text-xs font-semibold text-gray-500 mb-1.5">SALSAS:</p>
+                        <p className="text-xs font-semibold text-gray-500 mb-1.5">AGREGAR MÁS SALSAS:</p>
                         <div className="flex gap-2 overflow-x-auto whitespace-nowrap pb-2 scrollbar-thin">
                           {salsas.map(salsa => {
                             const selected = isSauceSelected(item, salsa.id);
