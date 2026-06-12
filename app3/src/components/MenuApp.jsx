@@ -3894,6 +3894,16 @@ export default function App() {
           </>
         )}
 
+        {/* Carrito flotante móvil - Siempre visible */}
+        <div className="sm:hidden fixed bottom-20 right-4 z-50">
+          <button
+            onClick={() => { vibrate(30); setIsCartOpen(true); }}
+            className="w-14 h-14 bg-gradient-to-r from-orange-500 to-red-600 rounded-full shadow-lg flex items-center justify-center text-white transition-all hover:scale-110 active:scale-95 hover:shadow-xl"
+          >
+            <ShoppingCartIcon size={24} badge={cartItemCount} />
+          </button>
+        </div>
+
         {/* Menú inferior fijo - Solo móvil */}
         <nav className={`sm:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 z-40 shadow-sm transition-transform duration-300 rounded-t-3xl ${isNavVisible ? 'translate-y-0' : 'translate-y-full'}`}>
           <div className="max-w-3xl mx-auto px-2 py-2">
