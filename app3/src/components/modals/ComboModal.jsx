@@ -169,14 +169,14 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
       selections: detailedSelections,
       fixed_items: comboData.fixed_items || [],
       quantity: 1,
-      component_customizations: buildComponentCustomizations()
+      component_customizations: buildComponentCustomizations(detailedSelections)
     };
     
     onAddToCart(comboWithSelections);
     onClose();
   };
 
-  const buildComponentCustomizations = () => {
+  const buildComponentCustomizations = (detailedSelections) => {
     const components = [];
     if (comboData.fixed_items) {
       let counter = 0;
@@ -194,7 +194,8 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
         }
       });
     }
-    Object.entries(detailedSelections).forEach(([groupName, items]) => {
+    if (detailedSelections) {
+      Object.entries(detailedSelections).forEach(([groupName, items]) => {
       items.forEach((sel, i) => {
         components.push({
           type: 'selection',
