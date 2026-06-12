@@ -502,10 +502,10 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                             )}
                           </>
                         )}
-                        {hasCustomizations && (item.customizations.filter(c => !c.isSauce).length > 0 || getSaucesForItem(item).length > 0) && (
+                        {(hasCustomizations && (item.customizations.filter(c => !c.isSauce).length > 0 || getSaucesForItem(item).length > 0)) || (isCombo && item.component_customizations && item.component_customizations.some(c => c.customizations && c.customizations.length > 0)) ? (
                           <>
                             <p className="text-xs font-semibold text-orange-600 mb-1">{isCombo ? 'ADEMÁS ESTÁ PERSONALIZADO CON:' : 'PERSONALIZADO CON:'}</p>
-                            {item.customizations.filter(c => !c.isSauce).length > 0 && (
+                            {item.customizations && item.customizations.filter(c => !c.isSauce).length > 0 && (
                               <div className="space-y-0.5 mb-1">
                                 {item.customizations.filter(c => !c.isSauce).map((custom, idx) => (
                                   <p key={idx} className="text-sm text-orange-600 font-medium">• {custom.quantity}x {custom.name} (+${(custom.price * custom.quantity).toLocaleString('es-CL')})</p>
@@ -522,8 +522,23 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                                 </div>
                               </>
                             )}
+                            {isCombo && item.component_customizations && item.component_customizations.some(c => c.customizations && c.customizations.length > 0) && (
+                              <div className="space-y-1 mb-1">
+                                {item.component_customizations.filter(c => c.customizations && c.customizations.length > 0).map((comp, ci) => (
+                                  <div key={ci}>
+                                    <p className="text-xs font-semibold text-gray-600">{comp.label}:</p>
+                                    {comp.customizations.filter(c => !c.isSauce).map((custom, idx) => (
+                                      <p key={idx} className="text-sm text-orange-600 font-medium ml-2">• {custom.quantity}x {custom.name} (+${(custom.price * custom.quantity).toLocaleString('es-CL')})</p>
+                                    ))}
+                                    {comp.customizations.filter(c => c.isSauce).map((sauce, si, arr) => (
+                                      <p key={si} className="text-sm text-orange-600 font-medium ml-2">• {sauce.name} ({si === 0 ? '1ra gratis' : `+$${SAUCE_PRICE.toLocaleString('es-CL')}`})</p>
+                                    ))}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </>
-                        )}
+                        ) : null}
                       </div>
                     ) : null}
                     {/* Salsas - full width */}
