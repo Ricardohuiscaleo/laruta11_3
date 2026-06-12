@@ -359,8 +359,8 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                     {/* Salsas - full width */}
                     {!isCombo && shouldShowPersonalizeButton && salsas.length > 0 && (
                       <div className="mt-2 pt-2 border-t border-gray-100">
-                        <p className="text-[10px] font-semibold text-gray-500 mb-1.5">SALSAS:</p>
-                        <div className="flex flex-wrap gap-1.5">
+                        <p className="text-xs font-semibold text-gray-500 mb-1.5">SALSAS:</p>
+                        <div className="flex gap-2 overflow-x-auto whitespace-nowrap pb-2 scrollbar-thin">
                           {salsas.map(salsa => {
                             const selected = isSauceSelected(item, salsa.id);
                             const selectedCount = selected ? getSaucesForItem(item).filter(s => s.id === salsa.id).length : 0;
@@ -380,19 +380,19 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                                     onUpdateCartItemSauces(item.cartItemId, rebuilt);
                                   }
                                 }}
-                                className={`text-[10px] px-2.5 py-1 rounded-md border font-medium transition-all ${
+                                className={`text-sm px-3 py-2 rounded-md border font-medium transition-all flex-shrink-0 ${
                                   selected
                                     ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
                                     : 'bg-white text-gray-600 border-gray-300 hover:border-orange-400 hover:text-orange-600'
                                 }`}
                               >
                                 {salsa.name}
-                                {selected && selectedCount > 1 && <span className="ml-1 text-[9px]">×{selectedCount}</span>}
+                                {selected && selectedCount > 1 && <span className="ml-1 text-xs">×{selectedCount}</span>}
                               </button>
                             );
                           })}
                           {getSaucesForItem(item).length > 0 && (
-                            <span className="text-[9px] text-orange-600 self-center ml-1 font-medium">
+                            <span className="text-xs text-orange-600 self-center ml-1 font-medium flex-shrink-0">
                               {getSaucesForItem(item).length === 1 ? '1ra gratis' : `+$${((getSaucesForItem(item).length - 1) * SAUCE_PRICE).toLocaleString('es-CL')}`}
                             </span>
                           )}
