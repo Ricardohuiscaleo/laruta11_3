@@ -115,18 +115,68 @@ const ImageFullscreenModal = ({ product, total, onClose }) => {
 
 
 
-const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartTotal, onCheckout, onCustomizeProduct, statusData, nearbyTrucks = [], salsas = [], onUpdateCartItemSauces }) => {
+const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartTotal, onCheckout, onCustomizeProduct, statusData, nearbyTrucks = [], salsas = [], onUpdateCartItemSauces, comboItems }) => {
   const [shake, setShake] = useState(false);
   const [lastDeleted, setLastDeleted] = useState(null);
   const [showUndo, setShowUndo] = useState(false);
   const [removingItems, setRemovingItems] = useState(new Set());
-  const [currentSuggestion, setCurrentSuggestion] = useState(0);
-
-  const suggestions = ['queso', 'carne', 'cebolla', 'tomate', 'palta', 'tocino'];
+  const [expandedItems, setExpandedItems] = useState(new Set());
 
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const SAUCE_PRICE = 500;
+
+  const personalizarItems = comboItems?.personalizar || [];
+
+  const toggleExpanded = (cartItemId) => {
+    setExpandedItems(prev => {
+      const next = new Set(prev);
+      if (next.has(cartItemId)) next.delete(cartItemId);
+      else next.add(cartItemId);
+      return next;
+    });
+  };
+
+  const getCustomizationQuantity = (item, customizationId) => {
+    if (!item.customizations) return 0;
+    const found = item.customizations.find(c => c.id === customizationId && !c.isSauce);
+    return found ? found.quantity : 0;
+  };
+
+  const handlePersonalizarAdd = (item, personalizarItem) => {
+    const existingCustoms = item.customizations || [];
+    const nonSauceCustoms = existingCustoms.filter(c => !c.isSauce);
+    const sauces = existingCustoms.filter(c => c.isSauce);
+    const existing = nonSauceCustoms.find(c => c.id === personalizarItem.id);
+    if (existing) {
+      const updated = nonSauceCustoms.map(c =>
+        c.id === personalizarItem.id ? { ...c, quantity: c.quantity + 1 } : c
+      );
+      onUpdateCartItemSauces(item.cartItemId, [...updated, ...sauces]);
+    } else {
+      onUpdateCartItemSauces(item.cartItemId, [
+        ...nonSauceCustoms,
+        { ...personalizarItem, quantity: 1 },
+        ...sauces
+      ]);
+    }
+  };
+
+  const handlePersonalizarRemove = (item, personalizarItem) => {
+    const existingCustoms = item.customizations || [];
+    const nonSauceCustoms = existingCustoms.filter(c => !c.isSauce);
+    const sauces = existingCustoms.filter(c => c.isSauce);
+    const existing = nonSauceCustoms.find(c => c.id === personalizarItem.id);
+    if (existing && existing.quantity > 1) {
+      const updated = nonSauceCustoms.map(c =>
+        c.id === personalizarItem.id ? { ...c, quantity: c.quantity - 1 } : c
+      );
+      onUpdateCartItemSauces(item.cartItemId, [...updated, ...sauces]);
+    } else {
+      const updated = nonSauceCustoms.filter(c => c.id !== personalizarItem.id);
+      onUpdateCartItemSauces(item.cartItemId, updated.length > 0 ? [...updated, ...sauces] : sauces.length > 0 ? [...sauces] : null);
+    }
+  };
 
   const getSaucesForItem = (item) => {
     if (!item.customizations) return [];
@@ -197,13 +247,6 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
     }
   }, [showUndo]);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentSuggestion(prev => (prev + 1) % suggestions.length);
-    }, 2000);
-    return () => clearInterval(interval);
-  }, []);
-
   return (
     <>
       <SwipeableModal
@@ -255,22 +298,14 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                         </div>
                         <div className="flex items-center gap-2 mb-2">
                           {shouldShowPersonalizeButton && (
-                            <>
-                              <button
-                                onClick={() => {
-                                  onClose();
-                                  onCustomizeProduct(item, itemIndex);
-                                }}
-                                className="flex items-center gap-1 px-2 py-1 bg-yellow-400 hover:bg-yellow-500 rounded-lg transition-colors flex-shrink-0"
-                                title={`Personalizar ${item.name}`}
-                              >
-                                <Pencil size={10} className="text-black" />
-                                <span className="text-xs text-black font-bold">Personalizar</span>
-                              </button>
-                              <span className="text-xs text-gray-500 italic">
-                                agrega: <span className="animate-fade-text" key={currentSuggestion}>{suggestions[currentSuggestion]}</span>
-                              </span>
-                            </>
+                            <button
+                              onClick={() => toggleExpanded(item.cartItemId)}
+                              className="flex items-center gap-1 px-2 py-1 bg-yellow-400 hover:bg-yellow-500 rounded-lg transition-colors flex-shrink-0"
+                              title={`Personalizar ${item.name}`}
+                            >
+                              {expandedItems.has(item.cartItemId) ? <ChevronUp size={14} className="text-black" /> : <ChevronDown size={14} className="text-black" />}
+                              <span className="text-xs text-black font-bold">Personalizar</span>
+                            </button>
                           )}
                         </div>
 
@@ -364,6 +399,38 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                         <X size={20} />
                       </button>
                     </div>
+                    {/* Expandable personalizar items */}
+                    {shouldShowPersonalizeButton && expandedItems.has(item.cartItemId) && personalizarItems.length > 0 && (
+                      <div className="mt-2 pt-3 border-t border-gray-200 space-y-1 animate-slide-up">
+                        <p className="text-[10px] font-semibold text-gray-500 mb-1.5">EXTRAS:</p>
+                        {personalizarItems.map(pi => {
+                          const qty = getCustomizationQuantity(item, pi.id);
+                          return (
+                            <div key={pi.id} className="flex items-center justify-between bg-gray-50 rounded-md px-2 py-1.5">
+                              <div className="flex items-center gap-2 min-w-0">
+                                {pi.image && <img src={pi.image} alt={pi.name} className="w-8 h-8 object-cover rounded flex-shrink-0" />}
+                                <div className="min-w-0">
+                                  <p className="text-[11px] font-medium text-gray-800 truncate">{pi.name}</p>
+                                  <p className="text-[10px] text-orange-500 font-medium">${pi.price.toLocaleString('es-CL')}</p>
+                                  {pi.description && <p className="text-[9px] text-gray-500 truncate">{pi.description}</p>}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
+                                {qty > 0 && (
+                                  <button onClick={() => handlePersonalizarRemove(item, pi)} className="text-red-400 hover:text-red-600 transition-colors">
+                                    <MinusCircle size={18} />
+                                  </button>
+                                )}
+                                {qty > 0 && <span className="text-xs font-bold w-4 text-center">{qty}</span>}
+                                <button onClick={() => handlePersonalizarAdd(item, pi)} className="text-green-500 hover:text-green-600 transition-colors">
+                                  <PlusCircle size={18} />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
               )
@@ -2380,7 +2447,7 @@ export default function App() {
                               onClick={() => setSelectedProduct({ ...item, cartIndex: cart.findIndex(i => i.cartItemId === item.cartItemId), isEditing: true })}
                               className="flex items-center gap-1 px-2 py-1 bg-yellow-400 hover:bg-yellow-500 rounded text-xs font-bold mb-2"
                             >
-                              <Pencil size={10} />
+                              <ChevronDown size={10} />
                               Personalizar
                             </button>
                           )}
@@ -2867,6 +2934,7 @@ export default function App() {
           statusData={statusData}
           nearbyTrucks={nearbyTrucks}
           salsas={comboItems.salsas}
+          comboItems={comboItems}
           onUpdateCartItemSauces={(cartItemId, updatedCustomizations) => {
             setCart(prevCart => prevCart.map(item =>
               item.cartItemId === cartItemId
