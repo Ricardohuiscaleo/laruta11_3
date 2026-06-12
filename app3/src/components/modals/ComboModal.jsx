@@ -140,7 +140,7 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
           const option = options.find(o => o.product_id === Number(pid));
           if (option && qty > 0) {
             for (let i = 0; i < qty; i++) {
-              items.push({ id: option.product_id, name: option.product_name, price: option.price_adjustment || 0 });
+              items.push({ id: option.product_id, name: option.product_name, price: option.price_adjustment || 0, image_url: option.image_url || null });
             }
           }
         });
@@ -148,7 +148,7 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
       } else if (Array.isArray(selection)) {
         detailedSelections[groupName] = selection.map(productId => {
           const option = options.find(o => o.product_id === productId);
-          return option ? { id: option.product_id, name: option.product_name, price: option.price_adjustment || 0 } : null;
+          return option ? { id: option.product_id, name: option.product_name, price: option.price_adjustment || 0, image_url: option.image_url || null } : null;
         }).filter(Boolean);
       } else if (selection) {
         const option = options.find(o => o.product_id === selection);
@@ -156,7 +156,8 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
           detailedSelections[groupName] = [{
             id: option.product_id,
             name: option.product_name,
-            price: option.price_adjustment || 0
+            price: option.price_adjustment || 0,
+            image_url: option.image_url || null
           }];
         }
       }
@@ -203,6 +204,7 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
             product_name: fixedItem.product_name,
             quantity: fixedItem.quantity,
             label: `${fixedItem.product_name}`,
+            image_url: fixedItem.image_url || null,
             customizations: [],
             no_salsas
           });
@@ -220,6 +222,7 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
           product_id: sel.id,
           product_name: sel.name,
           label: `${sel.name}`,
+          image_url: sel.image_url || null,
           customizations: [],
           no_salsas
         });

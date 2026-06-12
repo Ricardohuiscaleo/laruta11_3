@@ -331,7 +331,7 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
             <p>Tu carrito está vacío.</p>
           </div>
         ) : (
-          <div className="flex-grow overflow-y-auto space-y-3 bg-white px-4 py-4">
+          <div className="flex-grow overflow-y-auto space-y-3 bg-white px-2 py-2">
             {cart.map((item, itemIndex) => {
               const hasCustomizations = item.customizations && item.customizations.length > 0;
               const customizationsTotal = hasCustomizations ? item.customizations.reduce((sum, c) => {
@@ -401,17 +401,24 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                                   const compSauces = getComponentSauces(item, ci);
                                   return (
                                     <div key={ci} className="bg-gray-50 rounded-md p-2">
-                                      <div className="flex items-center justify-between mb-1">
-                                        <p className="text-xs font-medium text-gray-700">{comp.label}</p>
-                                        <button
-                                          onClick={() => {
-                                            const key = `${item.cartItemId}-comp-${ci}`;
-                                            toggleExpanded(key);
-                                          }}
-                                          className="text-[10px] text-orange-600 font-semibold hover:underline flex-shrink-0"
-                                        >
-                                          {expandedItems.has(`${item.cartItemId}-comp-${ci}`) ? '▾ Personalizar' : '▸ Personalizar'}
-                                        </button>
+                                      <div className="flex items-start gap-2 mb-1">
+                                        {comp.image_url && (
+                                          <img src={comp.image_url} alt={comp.label} className="w-8 h-8 object-cover rounded-md flex-shrink-0" onError={(e) => { e.target.style.display = 'none'; }} />
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-xs font-medium text-gray-700 truncate">{comp.label}</p>
+                                        </div>
+                                        {!comp.no_salsas && personalizarItems.length > 0 && (
+                                          <button
+                                            onClick={() => {
+                                              const key = `${item.cartItemId}-comp-${ci}`;
+                                              toggleExpanded(key);
+                                            }}
+                                            className="text-[10px] text-orange-600 font-semibold hover:underline flex-shrink-0"
+                                          >
+                                            {expandedItems.has(`${item.cartItemId}-comp-${ci}`) ? '▾ Personalizar' : '▸ Personalizar'}
+                                          </button>
+                                        )}
                                       </div>
                                       {compSauces.length > 0 && (
                                         <div className="flex flex-wrap gap-1 mb-0.5">
