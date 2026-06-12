@@ -2268,10 +2268,6 @@ export default function App() {
                     )}
                   </button>
 
-                  {/* Carrito */}
-                  <button onClick={() => { vibrate(30); setIsCartOpen(true); }} className="text-gray-600 hover:text-orange-500 transition-all p-1">
-                    <ShoppingCartIcon ref={cartIconRef} size={24} badge={cartItemCount} />
-                  </button>
                 </div>
               </div>
 
