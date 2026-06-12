@@ -6874,7 +6874,7 @@ laruta11-images/
 - Auto-deploy DESACTIVADO en todas las apps
 - Usar hook "Smart Deploy" para desplegar solo lo que cambió
 - Hooks individuales disponibles: Deploy app3, Deploy caja3, Deploy mi3 Backend, Deploy mi3 Frontend
-- Coolify API token: `3|S52ZUspC6N5G54apjgnKO6sY3VW5OixHlnY9GsMv8dc72ae8`
+- Coolify API token: `42|1Y6CWvsHCUULXlvxtJlz4m160Bd1qBlRlMSunjBNeab4b25f`
 - Steering file: `.kiro/steering/coolify-infra.md`
 
 ### Lecciones Aprendidas

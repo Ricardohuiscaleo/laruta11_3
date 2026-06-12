@@ -63,5 +63,5 @@ Reglas extraídas de 211+ lecciones aprendidas en producción. Seguir siempre.
 - SSH: `ssh root@76.13.126.63`
 - mi3-backend container: `docker ps --filter "name=ds24j8"`
 - app3 container: `docker ps --filter "name=egck4w"`
-- Coolify API: `http://76.13.126.63:8000`, Token: `3|S52ZUspC6N5G54apjgnKO6sY3VW5OixHlnY9GsMv8dc72ae8`
+- Coolify API: `http://76.13.126.63:8000`, Token: `42|1Y6CWvsHCUULXlvxtJlz4m160Bd1qBlRlMSunjBNeab4b25f`
 - Telegram bot: `@SuperKiro_bot`, Token: `8432728868:AAEf2aVSvZqCT1t7SVgKKuG411XveYGpA7M`, chat_id: `8104543914`

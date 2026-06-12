@@ -27,7 +27,6 @@ import { ShoppingCartIcon } from './icons/ShoppingCartIcon.jsx';
 import { SearchIcon } from './icons/SearchIcon.jsx';
 import { UserIcon } from './icons/UserIcon.jsx';
 import { ShareIcon } from './icons/ShareIcon.jsx';
-import SwipeableModal from './SwipeableModal.jsx';
 import DynamicStatusMessage from './ui/DynamicStatusMessage.jsx';
 import ShareProductModal from './modals/ShareProductModal.jsx';
 import ComboModal from './modals/ComboModal.jsx';
