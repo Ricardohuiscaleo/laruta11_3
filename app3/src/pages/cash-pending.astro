@@ -486,6 +486,19 @@
                         const customItems = item.customizations.map(c => `${c.quantity || 1}x ${c.name || c.product_name} (+$${((c.price || 0) * (c.quantity || 1)).toLocaleString('es-CL')})`);
                         customizationsText = `<div class="text-xs text-orange-600 mt-1"><strong>+ Personalización:</strong> ${customItems.join(', ')}</div>`;
                     }
+                    
+                    if (item.component_customizations && Array.isArray(item.component_customizations)) {
+                        const parts = item.component_customizations.filter(c => c.customizations && c.customizations.length > 0).map(c => {
+                            const items = c.customizations.map((cust, ci) => {
+                                if (cust.isSauce) return `${cust.name}${ci === 0 ? ' (1ra gratis)' : ' (+$500)'}`;
+                                return `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`;
+                            });
+                            return `${c.label}: ${items.join(', ')}`;
+                        });
+                        if (parts.length > 0) {
+                            customizationsText += `<div class="text-xs text-orange-600 mt-1"><strong>+ Personalización por componente:</strong> ${parts.join(' | ')}</div>`;
+                        }
+                    }
                 } else {
                     if (item.customizations && Array.isArray(item.customizations) && item.customizations.length > 0) {
                         const customItems = item.customizations.map(c => `${c.quantity || 1}x ${c.name || c.product_name} (+$${((c.price || 0) * (c.quantity || 1)).toLocaleString('es-CL')})`);

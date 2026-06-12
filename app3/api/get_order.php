@@ -73,6 +73,10 @@ try {
             if (isset($combo_data['customizations'])) {
                 $formatted_item['customizations'] = $combo_data['customizations'];
             }
+            
+            if (isset($combo_data['component_customizations'])) {
+                $formatted_item['component_customizations'] = $combo_data['component_customizations'];
+            }
         }
         
         $formatted_items[] = $formatted_item;
