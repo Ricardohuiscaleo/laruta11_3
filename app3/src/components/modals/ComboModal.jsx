@@ -207,6 +207,7 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
         });
       });
     });
+    }
     return components;
   };
 
