@@ -144,11 +144,12 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
       } else if (selection) {
         const option = options.find(o => o.product_id === selection);
         if (option) {
-          detailedSelections[groupName] = {
+          detailedSelections[groupName] = [{
             id: option.product_id,
             name: option.product_name,
-            price: option.price_adjustment || 0
-          };
+            price: option.price_adjustment || 0,
+            image_url: option.image_url || null
+          }];
         }
       }
     });
@@ -159,11 +160,65 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
       basePrice: combo.sale_price || combo.price,
       selections: detailedSelections,
       fixed_items: comboData.fixed_items || [],
-      quantity: 1
+      quantity: 1,
+      component_customizations: buildComponentCustomizations(detailedSelections)
     };
     
     onAddToCart(comboWithSelections);
     onClose();
+  };
+
+  const buildComponentCustomizations = (detailedSelections) => {
+    const components = [];
+    const costItemKeys = ['aceite', 'caja ', 'bolsa', 'empaque', 'funda', 'envase'];
+    if (comboData.fixed_items) {
+      const grouped = {};
+      comboData.fixed_items.forEach((fixedItem, fi) => {
+        const name = fixedItem.product_name?.toLowerCase() || '';
+        if (costItemKeys.some(k => name.includes(k))) return;
+        const key = fixedItem.product_name + '|' + fixedItem.product_id;
+        if (!grouped[key]) {
+          grouped[key] = { ...fixedItem, quantity: 0, fixed_index: fi };
+        }
+        grouped[key].quantity += fixedItem.quantity;
+      });
+      let counter = 0;
+      Object.values(grouped).forEach((fixedItem) => {
+        for (let i = 0; i < fixedItem.quantity; i++) {
+          counter++;
+          const name = fixedItem.product_name?.toLowerCase() || '';
+          const no_salsas = ['bilz', 'coca', 'sprite', 'fanta', 'agua', 'bebida', 'jugo', 'té ', 'café'].some(k => name.includes(k));
+          components.push({
+            type: 'fixed',
+            fixed_index: fixedItem.fixed_index,
+            component_index: i,
+            product_name: fixedItem.product_name,
+            quantity: fixedItem.quantity,
+            label: `${fixedItem.product_name}`,
+            image_url: fixedItem.image_url || null,
+            customizations: [],
+            no_salsas
+          });
+        }
+      });
+    }
+    if (detailedSelections) {
+      Object.entries(detailedSelections).forEach(([groupName, items]) => {
+      items.forEach((sel, i) => {
+        components.push({
+          type: 'selection',
+          group: groupName,
+          product_id: sel.id,
+          product_name: sel.name,
+          label: `${sel.name}`,
+          image_url: sel.image_url || null,
+          customizations: [],
+          no_salsas: true
+        });
+      });
+    });
+    }
+    return components;
   };
 
   if (!isOpen) return null;

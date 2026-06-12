@@ -3217,6 +3217,23 @@ export default function App() {
                       });
                     }
 
+                    // Sumar costo de salsas/extras por componente
+                    if (item.component_customizations) {
+                      item.component_customizations.forEach(comp => {
+                        if (comp.customizations) {
+                          let sauceCount = 0;
+                          comp.customizations.forEach(cust => {
+                            if (cust.isSauce) {
+                              sauceCount++;
+                              if (sauceCount > 1) itemTotal += 500;
+                            } else {
+                              itemTotal += (cust.price || 0) * (cust.quantity || 1);
+                            }
+                          });
+                        }
+                      });
+                    }
+
                     return (
                       <div key={item.cartItemId || item.id} className="border-b border-gray-100 pb-3 last:border-b-0">
                         <div className="flex justify-between items-start mb-2">
@@ -4114,8 +4131,20 @@ export default function App() {
                                     className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                                   />
                                 </div>
-                              )}
-                            </div>
+                            )}
+                            
+                            {isCombo && item.component_customizations && item.component_customizations.some(c => c.customizations && c.customizations.length > 0) && (
+                              <div className="mt-1 text-xs">
+                                {item.component_customizations.filter(c => c.customizations && c.customizations.length > 0).map((comp, ci) => {
+                                  const items = comp.customizations.map((cust, custIdx) => {
+                                    if (cust.isSauce) return `${cust.name}${custIdx === 0 ? ' (1ra gratis)' : ' (+$500)'}`;
+                                    return `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`;
+                                  });
+                                  return <div key={ci} className="text-purple-700 font-medium">• {comp.label}: {items.join(', ')}</div>;
+                                })}
+                              </div>
+                            )}
+                          </div>
                           </div>
                         );
                       })}

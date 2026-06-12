@@ -209,6 +209,25 @@ try {
             }
         }
         
+        // Agregar subtotal de customizations por componente (combos)
+        if (!empty($item['component_customizations'])) {
+            foreach ($item['component_customizations'] as $comp) {
+                if (!empty($comp['customizations'])) {
+                    $sauceCount = 0;
+                    foreach ($comp['customizations'] as $custom) {
+                        if (!empty($custom['isSauce'])) {
+                            $sauceCount++;
+                            if ($sauceCount > 1) {
+                                $subtotal += 500;
+                            }
+                        } else {
+                            $subtotal += ($custom['price'] ?? 0) * ($custom['quantity'] ?? 1);
+                        }
+                    }
+                }
+            }
+        }
+        
         // Detectar si es combo
         $is_combo = isset($item['type']) && $item['type'] === 'combo' || 
                    isset($item['category_name']) && $item['category_name'] === 'Combos' ||
@@ -222,7 +241,8 @@ try {
                 'fixed_items' => $item['fixed_items'] ?? [],
                 'selections' => $item['selections'] ?? [],
                 'combo_id' => $item['combo_id'] ?? null,
-                'customizations' => $item['customizations'] ?? []
+                'customizations' => $item['customizations'] ?? [],
+                'component_customizations' => $item['component_customizations'] ?? []
             ]);
         } else if (!empty($item['customizations']) && is_array($item['customizations'])) {
             $combo_data = json_encode([
@@ -325,6 +345,35 @@ try {
                     $cost_stmt->execute([$custom_id, $custom_id]);
                     $cost_row = $cost_stmt->fetch(PDO::FETCH_ASSOC);
                     $item_cost += ($cost_row['item_cost'] ?? 0) * $custom_qty;
+                }
+            }
+        }
+        
+        // Agregar costo de personalizaciones por componente (combos)
+        if (!empty($item['component_customizations'])) {
+            foreach ($item['component_customizations'] as $comp) {
+                if (!empty($comp['customizations'])) {
+                    foreach ($comp['customizations'] as $custom) {
+                        $custom_id = $custom['id'] ?? null;
+                        $custom_qty = $custom['quantity'] ?? 1;
+                        if ($custom_id) {
+                            $cost_stmt = $pdo->prepare("
+                                SELECT COALESCE(
+                                    (SELECT SUM(
+                                        i.cost_per_unit * pr.quantity * 
+                                        CASE WHEN pr.unit = 'g' THEN 0.001 ELSE 1 END
+                                    ) FROM product_recipes pr
+                                    JOIN ingredients i ON pr.ingredient_id = i.id
+                                    WHERE pr.product_id = ? AND i.is_active = 1),
+                                    (SELECT cost_price FROM products WHERE id = ?),
+                                    0
+                                ) as item_cost
+                            ");
+                            $cost_stmt->execute([$custom_id, $custom_id]);
+                            $cost_row = $cost_stmt->fetch(PDO::FETCH_ASSOC);
+                            $item_cost += ($cost_row['item_cost'] ?? 0) * $custom_qty;
+                        }
+                    }
                 }
             }
         }
