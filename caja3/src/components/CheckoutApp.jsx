@@ -611,7 +611,7 @@ const CheckoutApp = () => {
                     if (cust.isSauce) return `${cust.name}${custIdx === 0 ? ' (1ra gratis)' : ' (+$500)'}`;
                     return `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`;
                   });
-                  whatsappMessage += `   🎯 ${comp.label}: ${parts.join(', ')}\n`;
+                  whatsappMessage += `   🎯 ${comp.label || comp.product_name || comp.name || 'Producto'}: ${parts.join(', ')}\n`;
                 }
               });
             }
@@ -1000,7 +1000,7 @@ const CheckoutApp = () => {
                             <div className="mt-1 text-xs">
                               {item.component_customizations.filter(c => c.customizations && c.customizations.length > 0).map((comp, ci) => (
                                 <div key={ci} className="text-purple-700 font-medium">
-                                  • {comp.label}: {comp.customizations.map((cust, custIdx) =>
+                                  • {comp.label || comp.product_name || comp.name || 'Producto'}: {comp.customizations.map((cust, custIdx) =>
                                     cust.isSauce
                                       ? `${cust.name}${custIdx === 0 ? ' (1ra gratis)' : ' (+$500)'}`
                                       : `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`

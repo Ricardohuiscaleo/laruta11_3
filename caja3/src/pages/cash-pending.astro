@@ -255,7 +255,7 @@
                                 if (cust.isSauce) return `${cust.name}${ci === 0 ? ' (1ra gratis)' : ' (+$500)'}`;
                                 return `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`;
                             });
-                            return `${c.label}: ${custItems.join(', ')}`;
+                            return `${c.label || c.product_name || c.name || 'Producto'}: ${custItems.join(', ')}`;
                         });
                     if (parts.length > 0) {
                         const compText = `<div class="text-xs text-orange-600 mt-1"><strong>Personalización por componente:</strong> ${parts.join(' | ')}</div>`;

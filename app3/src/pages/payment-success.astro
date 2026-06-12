@@ -350,7 +350,7 @@ const amount = Astro.url.searchParams.get('amount');
                                             }
                                             return `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`;
                                         });
-                                        parts.push(`${comp.label}: ${items.join(', ')}`);
+                                        parts.push(`${comp.label || comp.product_name || comp.name || 'Producto'}: ${items.join(', ')}`);
                                     });
                                     if (parts.length > 0) {
                                         message += `   ${parts.join(' | ')}\n`;
@@ -485,7 +485,7 @@ const amount = Astro.url.searchParams.get('amount');
                                         }
                                         return `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`;
                                     });
-                                    parts.push(`${comp.label}: ${items.join(', ')}`);
+                                    parts.push(`${comp.label || comp.product_name || comp.name || 'Producto'}: ${items.join(', ')}`);
                                 });
                                 if (parts.length > 0) {
                                     html += `<div class="text-xs text-orange-600 mt-1">${parts.join(' | ')}</div>`;

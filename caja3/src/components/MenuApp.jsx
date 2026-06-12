@@ -3363,7 +3363,7 @@ export default function App() {
                                 if (cust.isSauce) return `${cust.name}${custIdx === 0 ? ' (1ra gratis)' : ' (+$500)'}`;
                                 return `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`;
                               });
-                              return <div key={ci} className="text-purple-700 font-medium">• {comp.label}: {items.join(', ')}</div>;
+                              return <div key={ci} className="text-purple-700 font-medium">• {comp.label || comp.product_name || comp.name || 'Producto'}: {items.join(', ')}</div>;
                             })}
                           </div>
                         )}
@@ -3377,9 +3377,9 @@ export default function App() {
                               return (
                                 <div key={ci} className="bg-gray-50 rounded-md p-2">
                                   <div className="flex items-start gap-2 mb-1">
-                                    {comp.image_url && <img src={comp.image_url} alt={comp.label} className="w-8 h-8 object-cover rounded-md flex-shrink-0" onError={(e) => { e.target.style.display = 'none'; }} />}
-                                    <div className="flex-1 min-w-0">
-                                      <p className="text-xs font-medium text-gray-700 truncate">{comp.label}</p>
+{comp.image_url && <img src={comp.image_url} alt={comp.label || comp.product_name || comp.name || ''} className="w-8 h-8 object-cover rounded-md flex-shrink-0" onError={(e) => { e.target.style.display = 'none'; }} />}
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-xs font-medium text-gray-700 truncate">{comp.label || comp.product_name || comp.name || 'Producto'}</p>
                                     </div>
                                   </div>
                                   {compSauces.length > 0 && (

@@ -655,7 +655,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
               });
               return (
                 <div key={ci} className="mb-0.5">
-                  <div className="text-[8px] font-semibold text-purple-600">{comp.label}:</div>
+                  <div className="text-[8px] font-semibold text-purple-600">{comp.label || comp.product_name || comp.name || 'Producto'}:</div>
                   <div className="space-y-0.5">{items}</div>
                 </div>
               );

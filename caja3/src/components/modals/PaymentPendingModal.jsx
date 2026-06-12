@@ -117,7 +117,7 @@ const PaymentPendingModal = ({ isOpen, onClose, paymentType, orderData }) => {
               if (cust.isSauce) return `${cust.name}${custIdx === 0 ? ' (1ra gratis)' : ' (+$500)'}`;
               return `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`;
             });
-            message += `   🎯 ${comp.label}: ${parts.join(', ')}\n`;
+            message += `   🎯 ${comp.label || comp.product_name || comp.name || 'Producto'}: ${parts.join(', ')}\n`;
           }
         });
       }
@@ -248,7 +248,7 @@ const PaymentPendingModal = ({ isOpen, onClose, paymentType, orderData }) => {
                           <div className="text-xs text-purple-700 mt-1">
                             {item.component_customizations.filter(c => c.customizations && c.customizations.length > 0).map((comp, ci) => (
                               <div key={ci} className="font-medium">
-                                🎯 {comp.label}: {comp.customizations.map((cust, custIdx) =>
+                                🎯 {comp.label || comp.product_name || comp.name || 'Producto'}: {comp.customizations.map((cust, custIdx) =>
                                   cust.isSauce
                                     ? `${cust.name}${custIdx === 0 ? ' (1ra gratis)' : ' (+$500)'}`
                                     : `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`
