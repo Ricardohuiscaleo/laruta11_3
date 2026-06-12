@@ -232,13 +232,46 @@
                     itemTotal += item.customizations.reduce((sum, c) => sum + (c.price * c.quantity), 0);
                 }
                 
+                if (item.component_customizations) {
+                    item.component_customizations.forEach(comp => {
+                        (comp.customizations || []).forEach((cust, custIdx) => {
+                            if (cust.isSauce) {
+                                itemTotal += custIdx === 0 ? 0 : 500;
+                            } else {
+                                itemTotal += (cust.price || 0) * (cust.quantity || 1);
+                            }
+                        });
+                    });
+                }
+                
                 subtotal += itemTotal;
                 
                 let includesText = '';
+                const isCombo = item.fixed_items && item.fixed_items.length > 0;
                 
                 if (item.customizations && item.customizations.length > 0) {
                     const customItems = item.customizations.map(c => `${c.quantity}x ${c.name} (+$${(c.price * c.quantity).toLocaleString('es-CL')})`).join(', ');
                     includesText = `<div class="text-xs text-blue-600 mt-1">Incluye: ${customItems}</div>`;
+                }
+                
+                if (isCombo && item.component_customizations && item.component_customizations.some(c => c.customizations && c.customizations.length > 0)) {
+                    const compHtml = item.component_customizations
+                        .filter(comp => comp.customizations && comp.customizations.length > 0)
+                        .map(comp => {
+                            const custHtml = comp.customizations.map((cust, custIdx) => {
+                                if (cust.isSauce) {
+                                    return `${cust.name}${custIdx === 0 ? ' (1ra gratis)' : ' (+$500)'}`;
+                                } else {
+                                    return `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`;
+                                }
+                            }).join(', ');
+                            return `<div class="text-xs text-blue-600 mt-1"><span class="font-medium">${comp.component_name || comp.name || 'Componente'}:</span> ${custHtml}</div>`;
+                        }).join('');
+                    if (includesText) {
+                        includesText += compHtml;
+                    } else {
+                        includesText = compHtml;
+                    }
                 }
                 
                 const allIncludes = [];

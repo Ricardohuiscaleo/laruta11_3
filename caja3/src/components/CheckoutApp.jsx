@@ -559,6 +559,18 @@ const CheckoutApp = () => {
               itemTotal += item.customizations.reduce((sum, c) => sum + (c.price * c.quantity), 0);
             }
 
+            if (item.component_customizations) {
+              item.component_customizations.forEach(comp => {
+                (comp.customizations || []).forEach((cust, custIdx) => {
+                  if (cust.isSauce) {
+                    itemTotal += custIdx === 0 ? 0 : 500;
+                  } else {
+                    itemTotal += (cust.price || 0) * (cust.quantity || 1);
+                  }
+                });
+              });
+            }
+
             whatsappMessage += `${index + 1}. ${item.name} x${item.quantity} - $${itemTotal.toLocaleString('es-CL')}\n`;
 
             // Mostrar personalizaciones
@@ -589,6 +601,19 @@ const CheckoutApp = () => {
                   }
                 });
               }
+            }
+
+            // Component customizations (salsas/extras per component)
+            if (isCombo && item.component_customizations && item.component_customizations.some(c => c.customizations && c.customizations.length > 0)) {
+              item.component_customizations.forEach(comp => {
+                if (comp.customizations && comp.customizations.length > 0) {
+                  const parts = comp.customizations.map((cust, custIdx) => {
+                    if (cust.isSauce) return `${cust.name}${custIdx === 0 ? ' (1ra gratis)' : ' (+$500)'}`;
+                    return `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`;
+                  });
+                  whatsappMessage += `   🎯 ${comp.label}: ${parts.join(', ')}\n`;
+                }
+              });
             }
           });
           whatsappMessage += `\n`;
@@ -921,6 +946,18 @@ const CheckoutApp = () => {
                     itemTotal += item.customizations.reduce((sum, c) => sum + (c.price * c.quantity), 0);
                   }
 
+                  if (item.component_customizations) {
+                    item.component_customizations.forEach(comp => {
+                      (comp.customizations || []).forEach((cust, custIdx) => {
+                        if (cust.isSauce) {
+                          itemTotal += custIdx === 0 ? 0 : 500;
+                        } else {
+                          itemTotal += (cust.price || 0) * (cust.quantity || 1);
+                        }
+                      });
+                    });
+                  }
+
                   return (
                     <div key={index} className="border-b border-gray-100 pb-3 last:border-b-0">
                       <div className="flex justify-between items-start">
@@ -956,6 +993,20 @@ const CheckoutApp = () => {
                                   );
                                 }
                               })}
+                            </div>
+                          )}
+
+                          {isCombo && item.component_customizations && item.component_customizations.some(c => c.customizations && c.customizations.length > 0) && (
+                            <div className="mt-1 text-xs">
+                              {item.component_customizations.filter(c => c.customizations && c.customizations.length > 0).map((comp, ci) => (
+                                <div key={ci} className="text-purple-700 font-medium">
+                                  • {comp.label}: {comp.customizations.map((cust, custIdx) =>
+                                    cust.isSauce
+                                      ? `${cust.name}${custIdx === 0 ? ' (1ra gratis)' : ' (+$500)'}`
+                                      : `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`
+                                  ).join(', ')}
+                                </div>
+                              ))}
                             </div>
                           )}
                         </div>

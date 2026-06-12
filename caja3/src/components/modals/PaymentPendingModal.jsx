@@ -65,7 +65,25 @@ const PaymentPendingModal = ({ isOpen, onClose, paymentType, orderData }) => {
     message += `*📦 Productos:*\n`;
     cart.forEach((item, index) => {
       const isCombo = item.type === 'combo' || item.category_name === 'Combos' || item.selections;
-      message += `${index + 1}. ${item.name} x${item.quantity} - $${(item.price * item.quantity).toLocaleString('es-CL')}\n`;
+      let itemTotal = item.price * item.quantity;
+
+      if (item.customizations && item.customizations.length > 0) {
+        itemTotal += item.customizations.reduce((sum, c) => sum + (c.price * c.quantity), 0);
+      }
+
+      if (item.component_customizations) {
+        item.component_customizations.forEach(comp => {
+          (comp.customizations || []).forEach((cust, custIdx) => {
+            if (cust.isSauce) {
+              itemTotal += custIdx === 0 ? 0 : 500;
+            } else {
+              itemTotal += (cust.price || 0) * (cust.quantity || 1);
+            }
+          });
+        });
+      }
+
+      message += `${index + 1}. ${item.name} x${item.quantity} - $${itemTotal.toLocaleString('es-CL')}\n`;
 
       if (isCombo && (item.fixed_items || item.selections)) {
         if (item.fixed_items) {
@@ -89,6 +107,18 @@ const PaymentPendingModal = ({ isOpen, onClose, paymentType, orderData }) => {
       if (item.customizations && item.customizations.length > 0) {
         item.customizations.forEach(custom => {
           message += `   - ${custom.quantity}x ${custom.name} (+$${(custom.price * custom.quantity).toLocaleString('es-CL')})\n`;
+        });
+      }
+
+      if (isCombo && item.component_customizations && item.component_customizations.some(c => c.customizations && c.customizations.length > 0)) {
+        item.component_customizations.forEach(comp => {
+          if (comp.customizations && comp.customizations.length > 0) {
+            const parts = comp.customizations.map((cust, custIdx) => {
+              if (cust.isSauce) return `${cust.name}${custIdx === 0 ? ' (1ra gratis)' : ' (+$500)'}`;
+              return `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`;
+            });
+            message += `   🎯 ${comp.label}: ${parts.join(', ')}\n`;
+          }
         });
       }
     });
@@ -168,6 +198,18 @@ const PaymentPendingModal = ({ isOpen, onClose, paymentType, orderData }) => {
                   itemTotal += item.customizations.reduce((sum, c) => sum + (c.price * c.quantity), 0);
                 }
 
+                if (item.component_customizations) {
+                  item.component_customizations.forEach(comp => {
+                    (comp.customizations || []).forEach((cust, custIdx) => {
+                      if (cust.isSauce) {
+                        itemTotal += custIdx === 0 ? 0 : 500;
+                      } else {
+                        itemTotal += (cust.price || 0) * (cust.quantity || 1);
+                      }
+                    });
+                  });
+                }
+
                 return (
                   <div key={index} className="border-b border-gray-200 pb-3 last:border-b-0 last:pb-0">
                     <div className="flex justify-between items-start">
@@ -198,6 +240,20 @@ const PaymentPendingModal = ({ isOpen, onClose, paymentType, orderData }) => {
                           <div className="text-xs text-blue-600 mt-1">
                             {item.customizations.map((c, i) => (
                               <div key={i}>+ {c.quantity}x {c.name} (+${(c.price * c.quantity).toLocaleString('es-CL')})</div>
+                            ))}
+                          </div>
+                        )}
+
+                        {isCombo && item.component_customizations && item.component_customizations.some(c => c.customizations && c.customizations.length > 0) && (
+                          <div className="text-xs text-purple-700 mt-1">
+                            {item.component_customizations.filter(c => c.customizations && c.customizations.length > 0).map((comp, ci) => (
+                              <div key={ci} className="font-medium">
+                                🎯 {comp.label}: {comp.customizations.map((cust, custIdx) =>
+                                  cust.isSauce
+                                    ? `${cust.name}${custIdx === 0 ? ' (1ra gratis)' : ' (+$500)'}`
+                                    : `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`
+                                ).join(', ')}
+                              </div>
                             ))}
                           </div>
                         )}

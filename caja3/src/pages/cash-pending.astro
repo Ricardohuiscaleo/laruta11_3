@@ -201,9 +201,22 @@
                     itemTotal += item.customizations.reduce((sum, c) => sum + (c.price * c.quantity), 0);
                 }
                 
+                if (item.component_customizations) {
+                    item.component_customizations.forEach(comp => {
+                        (comp.customizations || []).forEach((cust, custIdx) => {
+                            if (cust.isSauce) {
+                                itemTotal += custIdx === 0 ? 0 : 500;
+                            } else {
+                                itemTotal += (cust.price || 0) * (cust.quantity || 1);
+                            }
+                        });
+                    });
+                }
+                
                 subtotal += itemTotal;
                 
                 let includesText = '';
+                const isCombo = item.type === 'combo' || item.category_name === 'Combos' || item.selections;
                 
                 if (item.customizations && item.customizations.length > 0) {
                     const customItems = item.customizations.map(c => `${c.quantity}x ${c.name} (+$${(c.price * c.quantity).toLocaleString('es-CL')})`).join(', ');
@@ -231,6 +244,22 @@
                         includesText += `<div class="text-xs text-gray-500 mt-1">También: ${allIncludes.join(', ')}</div>`;
                     } else {
                         includesText = `<div class="text-xs text-gray-500 mt-1">Incluye: ${allIncludes.join(', ')}</div>`;
+                    }
+                }
+                
+                if (isCombo && item.component_customizations && Array.isArray(item.component_customizations)) {
+                    const parts = item.component_customizations
+                        .filter(c => c.customizations && c.customizations.length > 0)
+                        .map(c => {
+                            const custItems = c.customizations.map((cust, ci) => {
+                                if (cust.isSauce) return `${cust.name}${ci === 0 ? ' (1ra gratis)' : ' (+$500)'}`;
+                                return `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`;
+                            });
+                            return `${c.label}: ${custItems.join(', ')}`;
+                        });
+                    if (parts.length > 0) {
+                        const compText = `<div class="text-xs text-orange-600 mt-1"><strong>Personalización por componente:</strong> ${parts.join(' | ')}</div>`;
+                        includesText = includesText ? includesText + compText : compText;
                     }
                 }
                 

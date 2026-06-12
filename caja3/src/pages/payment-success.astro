@@ -275,6 +275,30 @@ const amount = Astro.url.searchParams.get('amount');
                         message += `*PRODUCTOS:*\n`;
                         products.forEach((item, index) => {
                             message += `${index + 1}. ${item['product_name'] || item['name']} x${item['quantity']} - $${(item['price'] * item['quantity']).toLocaleString('es-CL')}\n`;
+                            
+                            if (item['combo_data']) {
+                                try {
+                                    const comboData = typeof item['combo_data'] === 'string' ? JSON.parse(item['combo_data']) : item['combo_data'];
+                                    
+                                    if (comboData.component_customizations && Array.isArray(comboData.component_customizations)) {
+                                        const parts = [];
+                                        comboData.component_customizations.filter(c => c.customizations && c.customizations.length > 0).forEach(comp => {
+                                            const items = comp.customizations.map((cust, ci) => {
+                                                if (cust.isSauce) {
+                                                    return `${cust.name}${ci === 0 ? ' (1ra gratis)' : ' (+$500)'}`;
+                                                }
+                                                return `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`;
+                                            });
+                                            parts.push(`${comp.label}: ${items.join(', ')}`);
+                                        });
+                                        if (parts.length > 0) {
+                                            message += `   ${parts.join(' | ')}\n`;
+                                        }
+                                    }
+                                } catch (e) {
+                                    console.error('Error parsing combo_data:', e);
+                                }
+                            }
                         });
                         message += `\n`;
                     }
@@ -356,12 +380,42 @@ const amount = Astro.url.searchParams.get('amount');
                 const productsList = document.getElementById('products-list');
                 if (!productsList || !products.length) return;
                 
-                productsList.innerHTML = products.map(item => `
-                    <div class="flex justify-between items-center py-1">
-                        <span class="text-gray-700">${item.product_name || item.name || 'Producto'} x${item.quantity || 1}</span>
-                        <span class="font-semibold text-gray-800">$${((item.price || 0) * (item.quantity || 1)).toLocaleString('es-CL')}</span>
-                    </div>
-                `).join('');
+                productsList.innerHTML = products.map(item => {
+                    let html = `
+                        <div class="py-1">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-700">${item.product_name || item.name || 'Producto'} x${item.quantity || 1}</span>
+                                <span class="font-semibold text-gray-800">$${((item.price || 0) * (item.quantity || 1)).toLocaleString('es-CL')}</span>
+                            </div>`;
+                    
+                    if (item.combo_data) {
+                        try {
+                            const comboData = typeof item.combo_data === 'string' ? JSON.parse(item.combo_data) : item.combo_data;
+                            const parts = [];
+                            
+                            if (comboData.component_customizations && Array.isArray(comboData.component_customizations)) {
+                                comboData.component_customizations.filter(c => c.customizations && c.customizations.length > 0).forEach(comp => {
+                                    const items = comp.customizations.map((cust, ci) => {
+                                        if (cust.isSauce) {
+                                            return `${cust.name}${ci === 0 ? ' (1ra gratis)' : ' (+$500)'}`;
+                                        }
+                                        return `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`;
+                                    });
+                                    parts.push(`${comp.label}: ${items.join(', ')}`);
+                                });
+                            }
+                            
+                            if (parts.length > 0) {
+                                html += `<div class="text-xs text-orange-600 mt-1">${parts.join(' | ')}</div>`;
+                            }
+                        } catch (e) {
+                            console.error('Error parsing combo_data:', e);
+                        }
+                    }
+                    
+                    html += `</div>`;
+                    return html;
+                }).join('');
             }
             
             function displayDeliveryInfo(delivery) {

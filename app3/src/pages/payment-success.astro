@@ -339,6 +339,23 @@ const amount = Astro.url.searchParams.get('amount');
                                         message += `   Incluye: ${customItems.join(', ')}\n`;
                                     }
                                 }
+                                
+                                // Personalizaciones por componente (salsas y extras)
+                                if (comboData.component_customizations && Array.isArray(comboData.component_customizations)) {
+                                    const parts = [];
+                                    comboData.component_customizations.filter(c => c.customizations && c.customizations.length > 0).forEach(comp => {
+                                        const items = comp.customizations.map((cust, ci) => {
+                                            if (cust.isSauce) {
+                                                return `${cust.name}${ci === 0 ? ' (1ra gratis)' : ' (+$500)'}`;
+                                            }
+                                            return `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`;
+                                        });
+                                        parts.push(`${comp.label}: ${items.join(', ')}`);
+                                    });
+                                    if (parts.length > 0) {
+                                        message += `   ${parts.join(' | ')}\n`;
+                                    }
+                                }
                             } catch (e) {
                                 console.error('Error parsing combo_data:', e);
                             }
@@ -457,6 +474,22 @@ const amount = Astro.url.searchParams.get('amount');
                             
                             if (includeItems.length > 0) {
                                 html += `<div class="text-xs text-gray-500 mt-1">Incluye: ${includeItems.join(', ')}</div>`;
+                            }
+                            
+                            if (comboData.component_customizations && Array.isArray(comboData.component_customizations)) {
+                                const parts = [];
+                                comboData.component_customizations.filter(c => c.customizations && c.customizations.length > 0).forEach(comp => {
+                                    const items = comp.customizations.map((cust, ci) => {
+                                        if (cust.isSauce) {
+                                            return `${cust.name}${ci === 0 ? ' (1ra gratis)' : ' (+$500)'}`;
+                                        }
+                                        return `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`;
+                                    });
+                                    parts.push(`${comp.label}: ${items.join(', ')}`);
+                                });
+                                if (parts.length > 0) {
+                                    html += `<div class="text-xs text-orange-600 mt-1">${parts.join(' | ')}</div>`;
+                                }
                             }
                         } catch (e) {
                             console.error('Error parsing combo_data:', e);

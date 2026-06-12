@@ -648,7 +648,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                       className="w-2.5 h-2.5 accent-purple-600"
                     />
                     <span className={`text-[9px] font-bold ${checkedItems[itemKey] ? 'line-through text-purple-300' : 'text-purple-800'}`}>
-                      {cust.isSauce ? cust.name : `${cust.quantity || 1}x ${cust.name}`}
+                      {cust.isSauce ? `${cust.name}${custIdx === 0 ? ' (1ra gratis)' : ' (+$500)'}` : `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`}
                     </span>
                   </label>
                 );
