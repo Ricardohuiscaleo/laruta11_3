@@ -307,7 +307,7 @@
                                 }
                                 return `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`;
                             }).join(', ');
-                            compHtml += `<div class="text-xs text-gray-600 mt-1">${comp.component_name || comp.name}: ${custItems}</div>`;
+                            compHtml += `<div class="text-xs text-gray-600 mt-1">${comp.label || comp.product_name || comp.name}: ${custItems}</div>`;
                         }
                     });
                     if (compHtml) {

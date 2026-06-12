@@ -209,7 +209,7 @@
                     let compHtml = '';
                     item.component_customizations.forEach(comp => {
                         if (comp.customizations && comp.customizations.length > 0) {
-                            const compName = comp.component_name || comp.name || '';
+                            const compName = comp.label || comp.product_name || comp.name || '';
                             const custTexts = comp.customizations.map((cust, custIdx) => {
                                 if (cust.isSauce) {
                                     return `${cust.name}${custIdx === 0 ? ' (1ra gratis)' : ' (+$500)'}`;

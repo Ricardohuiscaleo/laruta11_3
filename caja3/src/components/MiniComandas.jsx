@@ -472,8 +472,11 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
   };
 
   const renderProductDetails = (item, orderId) => {
-    const comboData = item.combo_data ? JSON.parse(item.combo_data) : null;
+    const comboData = item.combo_data ? (typeof item.combo_data === 'string' ? JSON.parse(item.combo_data) : item.combo_data) : null;
     const isCombo = item.item_type === 'combo' && comboData;
+    if (isCombo && comboData?.component_customizations) {
+      console.log('DEBUG component_customizations:', JSON.stringify(comboData.component_customizations));
+    }
     const isChecked = !!checkedItems[`${orderId}-${item.id}`];
     const imageUrl = item.image_url || item.image || `https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/2.jpg`;
 
@@ -844,7 +847,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
         {viewMode === 'list' ? (
           <div className="bg-gray-50 rounded p-1 mb-1 space-y-0.5">
             {order.items && order.items.map(item => {
-              const comboData = item.combo_data ? JSON.parse(item.combo_data) : null;
+              const comboData = item.combo_data ? (typeof item.combo_data === 'string' ? JSON.parse(item.combo_data) : item.combo_data) : null;
               const isCombo = item.item_type === 'combo' && comboData;
               const isChecked = !!checkedItems[`${order.id}-${item.id}`];
               const imageUrl = item.image_url || item.image || `https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/2.jpg`;
@@ -892,6 +895,19 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                       {comboData && comboData.customizations && comboData.customizations.length > 0 && comboData.customizations.map((c, idx) => (
                         <div key={idx} className="text-orange-700 font-bold">+ {c.quantity || item.quantity}x {c.name}</div>
                       ))}
+                      {comboData && comboData.component_customizations && comboData.component_customizations.some(c => c.customizations && c.customizations.length > 0) && (
+                        <div className="mt-0.5 text-[9px] text-purple-700">
+                          {comboData.component_customizations.filter(c => c.customizations && c.customizations.length > 0).map((comp, ci) => {
+                            const custTexts = comp.customizations.map((cust, custIdx) => {
+                              if (cust.isSauce) {
+                                return `${cust.name}${custIdx === 0 ? ' (1ra gratis)' : ' (+$500)'}`;
+                              }
+                              return `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`;
+                            });
+                            return <div key={ci}><span className="font-semibold">{comp.label || comp.product_name || comp.name}:</span> {custTexts.join(', ')}</div>;
+                          })}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

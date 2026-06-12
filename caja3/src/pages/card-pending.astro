@@ -265,7 +265,7 @@
                                     return `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`;
                                 }
                             }).join(', ');
-                            return `<div class="text-xs text-blue-600 mt-1"><span class="font-medium">${comp.component_name || comp.name || 'Componente'}:</span> ${custHtml}</div>`;
+                            return `<div class="text-xs text-blue-600 mt-1"><span class="font-medium">${comp.label || comp.product_name || comp.name || 'Componente'}:</span> ${custHtml}</div>`;
                         }).join('');
                     if (includesText) {
                         includesText += compHtml;
