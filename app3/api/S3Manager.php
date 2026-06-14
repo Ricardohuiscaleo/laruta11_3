@@ -51,8 +51,14 @@ class S3Manager {
         imagefilledrectangle($compressed, 0, 0, $newWidth, $newHeight, imagecolorallocatealpha($compressed, 255, 255, 255, 127));
         imagecopyresampled($compressed, $source, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
         
-        $tempFile = tempnam(sys_get_temp_dir(), 'compressed_') . '.webp';
-        imagewebp($compressed, $tempFile, $quality);
+        $tempFile = tempnam(sys_get_temp_dir(), 'compressed_');
+        if (function_exists('imagewebp')) {
+            $tempFile .= '.webp';
+            imagewebp($compressed, $tempFile, $quality);
+        } else {
+            $tempFile .= '.jpg';
+            imagejpeg($compressed, $tempFile, $quality);
+        }
         imagedestroy($source);
         imagedestroy($compressed);
         return $tempFile;
@@ -104,10 +110,16 @@ class S3Manager {
         $filePath = $file['tmp_name'];
         $originalSize = filesize($filePath);
         
+        $webpSupport = function_exists('imagewebp');
         if ($compress && strpos($mimeType, 'image/') === 0) {
             $filePath = $this->compressImage($filePath);
-            $key = preg_replace('/\.\w+$/', '.webp', $key);
-            $mimeType = 'image/webp';
+            if ($webpSupport) {
+                $key = preg_replace('/\.\w+$/', '.webp', $key);
+                $mimeType = 'image/webp';
+            } else {
+                $key = preg_replace('/\.\w+$/', '.jpg', $key);
+                $mimeType = 'image/jpeg';
+            }
         }
         
         $endpoint = $this->config['s3_endpoint'] ?? null;
