@@ -385,14 +385,8 @@ try {
         if (!empty($item['component_customizations'])) {
             foreach ($item['component_customizations'] as $comp) {
                 if (!empty($comp['customizations'])) {
-                    $sauceCount = 0;
                     foreach ($comp['customizations'] as $custom) {
-                        if (!empty($custom['isSauce'])) {
-                            $sauceCount++;
-                            if ($sauceCount > 1) $subtotal += 500;
-                        } else {
-                            $subtotal += ($custom['price'] ?? 0) * ($custom['quantity'] ?? 1);
-                        }
+                        $subtotal += ($custom['price'] ?? 0) * ($custom['quantity'] ?? 1);
                     }
                 }
             }

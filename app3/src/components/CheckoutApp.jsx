@@ -266,14 +266,8 @@ const CheckoutApp = ({ onClose }) => {
         if (item.component_customizations) {
           item.component_customizations.forEach(comp => {
             if (comp.customizations) {
-              let sauceCount = 0;
               comp.customizations.forEach(custom => {
-                if (custom.isSauce) {
-                  sauceCount++;
-                  if (sauceCount > 1) itemTotal += 500;
-                } else {
-                  itemTotal += (custom.price || 0) * (custom.quantity || 1);
-                }
+                itemTotal += (custom.price || 0) * (custom.quantity || 1);
               });
             }
           });
@@ -1485,21 +1479,6 @@ const CheckoutApp = ({ onClose }) => {
                       return sum + (custom.price * custom.quantity);
                     }, 0);
                     itemTotal += customizationsTotal;
-                  }
-                  if (item.component_customizations) {
-                    item.component_customizations.forEach(comp => {
-                      if (comp.customizations) {
-                        let sauceCount = 0;
-                        comp.customizations.forEach(custom => {
-                          if (custom.isSauce) {
-                            sauceCount++;
-                            if (sauceCount > 1) itemTotal += 500;
-                          } else {
-                            itemTotal += (custom.price || 0) * (custom.quantity || 1);
-                          }
-                        });
-                      }
-                    });
                   }
                   return (
                     <div key={index} className="border-b border-gray-100 pb-3 last:border-b-0">

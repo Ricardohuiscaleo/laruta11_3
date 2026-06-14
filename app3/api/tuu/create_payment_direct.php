@@ -290,22 +290,6 @@ try {
                         $item_customizations_total += $ic_price * $ic_qty;
                     }
                 }
-                // Agregar costo de customizaciones por componente (combos)
-                if (!empty($item['component_customizations'])) {
-                    foreach ($item['component_customizations'] as $comp) {
-                        if (!empty($comp['customizations'])) {
-                            $comp_sauce_count = 0;
-                            foreach ($comp['customizations'] as $cc) {
-                                if (!empty($cc['isSauce'])) {
-                                    $comp_sauce_count++;
-                                    if ($comp_sauce_count > 1) $item_customizations_total += 500;
-                                } else {
-                                    $item_customizations_total += ($cc['price'] ?? 0) * ($cc['quantity'] ?? 1);
-                                }
-                            }
-                        }
-                    }
-                }
                 $subtotal = ($product_price * $quantity) + $item_customizations_total;
                 
                 // Calcular item_cost desde receta o cost_price
@@ -349,20 +333,15 @@ try {
                 $combo_data = null;
                 
                 if ($is_combo) {
-$combo_data_array = [
+                    $combo_data_array = [
                         'fixed_items' => $item['fixed_items'] ?? [],
                         'selections' => $item['selections'] ?? [],
                         'combo_id' => $item['combo_id'] ?? null
                     ];
-
+                    
                     // Agregar customizations si existen (extras personalizados del combo)
                     if ($has_customizations) {
                         $combo_data_array['customizations'] = $item['customizations'];
-                    }
-
-                    // Agregar component_customizations
-                    if (!empty($item['component_customizations'])) {
-                        $combo_data_array['component_customizations'] = $item['component_customizations'];
                     }
                     
                     $combo_data = json_encode($combo_data_array);
