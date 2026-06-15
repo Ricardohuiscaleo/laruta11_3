@@ -799,6 +799,7 @@
                                                         const isCombo = item.item_type === 'combo';
                                                         let comboData = null;
                                                         let customizations = null;
+                                                        let componentCustoms = null;
                                                         
                                                         if (item.combo_data) {
                                                             try {
@@ -809,7 +810,7 @@ if (isCombo) {
                                                                  } else if (parsed.customizations) {
                                                                      customizations = parsed.customizations;
                                                                  }
-                                                                 let componentCustoms = parsed.component_customizations || null;
+                                                                  componentCustoms = parsed.component_customizations || null;
                                                             } catch (e) {
                                                                 console.error('Error parsing combo_data:', e);
                                                             }
