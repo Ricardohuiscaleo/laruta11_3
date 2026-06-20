@@ -52,14 +52,13 @@ class R11CreditService
                 'id', 'nombre', 'email', 'telefono',
                 'limite_credito_r11', 'credito_r11_usado',
                 'relacion_r11', 'fecha_ultimo_pago_r11', 'fecha_aprobacion_r11',
-                'credito_r11_bloqueado', 'created_at',
+                'credito_r11_bloqueado',
             ])
             ->orderBy('credito_r11_usado', 'desc')
             ->get()
             ->map(function ($user) use ($now) {
                 $fechaRef = $user->fecha_ultimo_pago_r11
-                    ?? $user->fecha_aprobacion_r11
-                    ?? $user->created_at?->toDateString();
+                    ?? $user->fecha_aprobacion_r11;
                 $diasSinPago = $fechaRef
                     ? (int) $now->startOfDay()->diffInDays(Carbon::parse($fechaRef)->startOfDay())
                     : 0;
@@ -127,8 +126,7 @@ class R11CreditService
 
         $now = Carbon::now();
         $fechaRef = $user->fecha_ultimo_pago_r11
-            ?? $user->fecha_aprobacion_r11
-            ?? $user->created_at?->toDateString();
+            ?? $user->fecha_aprobacion_r11;
         $diasSinPago = $fechaRef
             ? (int) $now->startOfDay()->diffInDays(Carbon::parse($fechaRef)->startOfDay())
             : 0;
