@@ -983,7 +983,7 @@ export default function CreditosSection({ onHeaderConfig }: CreditosSectionProps
               {morosos.map(u => {
                 const diasSinPago = u.fecha_ultimo_pago
                   ? Math.floor((Date.now() - new Date(u.fecha_ultimo_pago).getTime()) / (1000 * 60 * 60 * 24))
-                  : 999;
+                  : null;
                 return (
                 <tr key={u.id} className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => setSelectedUser(u)}>
                   <td className="px-4 py-3 font-medium">{u.nombre}</td>
@@ -991,12 +991,16 @@ export default function CreditosSection({ onHeaderConfig }: CreditosSectionProps
                   <td className="px-4 py-3 text-gray-600">{u.grado_militar || '—'}</td>
                   <td className="px-4 py-3 font-semibold text-red-600">{formatCLP(u.credito_usado)}</td>
                   <td className="px-4 py-3">
-                    <span className={cn('font-medium', diasSinPago > 60 ? 'text-red-600' : 'text-orange-600')}>
-                      {diasSinPago}d
-                    </span>
+                    {diasSinPago !== null ? (
+                      <span className={cn('font-medium', diasSinPago > 60 ? 'text-red-600' : 'text-orange-600')}>
+                        {diasSinPago}d
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-gray-500 text-xs">
-                    {u.fecha_ultimo_pago ? new Date(u.fecha_ultimo_pago).toLocaleDateString('es-CL') : 'Nunca'}
+                    {u.fecha_ultimo_pago ? new Date(u.fecha_ultimo_pago).toLocaleDateString('es-CL') : '—'}
                   </td>
                   <td className="px-4 py-3 text-gray-500 text-xs">
                     {u.ultimo_email_enviado ? (
