@@ -7,7 +7,6 @@ use App\Http\Controllers\Controller;
 use App\Models\R11CreditTransaction;
 use App\Models\Rl6CreditTransaction;
 use App\Models\Usuario;
-use App\Services\Credit\R11CreditService;
 use App\Services\Credit\RL6CreditService;
 use App\Services\Email\GmailService;
 use Illuminate\Http\JsonResponse;
@@ -116,127 +115,6 @@ class CreditController extends Controller
         }
 
         return response()->json(['success' => true, 'data' => $usuario]);
-    }
-
-    // ── R11 Morosos Methods ─────────────────────────────────────────
-
-    public function r11Morosos(R11CreditService $service): JsonResponse
-    {
-        $morosos = $service->getMorosos();
-
-        return response()->json([
-            'success' => true,
-            'data' => $morosos,
-            'summary' => [
-                'total' => count($morosos),
-                'total_deuda' => array_sum(array_column($morosos, 'credito_usado')),
-                'total_limite' => array_sum(array_column($morosos, 'limite_credito')),
-            ],
-        ]);
-    }
-
-    public function r11PreviewEmail(int $id, R11CreditService $service): JsonResponse
-    {
-        $preview = $service->previewEmail($id);
-
-        return response()->json([
-            'success' => true,
-            'html' => $preview['html'],
-            'tipo' => $preview['tipo'],
-            'email' => $preview['email'],
-        ]);
-    }
-
-    public function r11SendEmail(int $id, R11CreditService $service, GmailService $gmail): JsonResponse
-    {
-        $preview = $service->previewEmail($id);
-
-        $subjectMap = [
-            'sin_deuda' => '✅ Tu crédito R11 está al día - La Ruta 11',
-            'recordatorio' => '📋 Recordatorio de pago R11 - La Ruta 11',
-            'urgente' => '🚨 Último aviso de pago R11 - La Ruta 11',
-            'moroso' => '⚠️ Pago vencido R11 - La Ruta 11',
-        ];
-        $subject = $subjectMap[$preview['tipo']] ?? 'Estado de cuenta R11 - La Ruta 11';
-
-        $result = $gmail->sendRL6CollectionEmail(
-            $id,
-            $preview['email'],
-            $preview['html'],
-            $subject,
-            $preview['tipo']
-        );
-
-        if ($result['success']) {
-            return response()->json([
-                'success' => true,
-                'tipo' => $preview['tipo'],
-                'gmail_message_id' => $result['gmail_message_id'],
-            ]);
-        }
-
-        return response()->json([
-            'success' => false,
-            'error' => $result['error'] ?? 'Error al enviar email',
-        ], 500);
-    }
-
-    public function r11SendBulkEmails(Request $request, R11CreditService $service, GmailService $gmail): JsonResponse
-    {
-        $data = $request->validate([
-            'user_ids' => 'required|array|min:1',
-            'user_ids.*' => 'integer',
-        ]);
-
-        $totalSent = 0;
-        $totalFailed = 0;
-        $failed = [];
-
-        foreach ($data['user_ids'] as $userId) {
-            try {
-                $preview = $service->previewEmail($userId);
-
-                $subjectMap = [
-                    'sin_deuda' => '✅ Tu crédito R11 está al día - La Ruta 11',
-                    'recordatorio' => '📋 Recordatorio de pago R11 - La Ruta 11',
-                    'urgente' => '🚨 Último aviso de pago R11 - La Ruta 11',
-                    'moroso' => '⚠️ Pago vencido R11 - La Ruta 11',
-                ];
-                $subject = $subjectMap[$preview['tipo']] ?? 'Estado de cuenta R11 - La Ruta 11';
-
-                $result = $gmail->sendRL6CollectionEmail(
-                    $userId,
-                    $preview['email'],
-                    $preview['html'],
-                    $subject,
-                    $preview['tipo']
-                );
-
-                if ($result['success']) {
-                    $totalSent++;
-                } else {
-                    $totalFailed++;
-                    $failed[] = [
-                        'user_id' => $userId,
-                        'error' => $result['error'] ?? 'Error desconocido',
-                    ];
-                }
-            } catch (\Throwable $e) {
-                $totalFailed++;
-                $failed[] = [
-                    'user_id' => $userId,
-                    'error' => $e->getMessage(),
-                ];
-                Log::error("R11 bulk email failed for user {$userId}", ['error' => $e->getMessage()]);
-            }
-        }
-
-        return response()->json([
-            'success' => true,
-            'total_sent' => $totalSent,
-            'total_failed' => $totalFailed,
-            'failed' => $failed,
-        ]);
     }
 
     // ── RL6 Credit Methods ──────────────────────────────────────────
