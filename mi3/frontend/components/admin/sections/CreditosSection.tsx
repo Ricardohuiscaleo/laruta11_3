@@ -5,7 +5,7 @@ import { apiFetch } from '@/lib/api';
 import { formatCLP, cn } from '@/lib/utils';
 import { Loader2, CheckCircle, XCircle, DollarSign, Mail, AlertTriangle, Eye, X, ThumbsUp, ThumbsDown, FileText, BarChart3, Archive, RotateCcw } from 'lucide-react';
 import type { SectionHeaderConfig } from '@/components/admin/AdminShell';
-import type { RL6CreditUser, RL6Summary, EmailEstado, PaymentReceipt, PendingCredit } from '@/types/admin';
+import type { RL6CreditUser, RL6Summary, EmailEstado, PaymentReceipt, PendingCredit, R11MorosoUser } from '@/types/admin';
 import EmailPreviewModal from '@/components/admin/EmailPreviewModal';
 import CreditSummaryTrailing from '@/components/admin/CreditSummaryTrailing';
 
@@ -21,7 +21,7 @@ interface CreditUser {
   aprobado: boolean;
 }
 
-type CreditTab = 'r11' | 'rl6' | 'solicitudes';
+type CreditTab = 'r11' | 'rl6' | 'solicitudes' | 'morosos';
 
 /* ─── Props ─── */
 
@@ -329,6 +329,22 @@ export default function CreditosSection({ onHeaderConfig }: CreditosSectionProps
   const [pendingLoading, setPendingLoading] = useState(false);
   const [pendingActing, setPendingActing] = useState<number | null>(null);
 
+  /* ─── R11 Morosos state ─── */
+  const [morososData, setMorososData] = useState<R11MorosoUser[]>([]);
+  const [morososSummary, setMorososSummary] = useState<{ total: number; total_deuda: number } | null>(null);
+  const [morososLoading, setMorososLoading] = useState(false);
+  const [morososError, setMorososError] = useState('');
+
+  /* ─── R11 Morosos email preview state ─── */
+  const [morosoEmailPreview, setMorosoEmailPreview] = useState<{ html: string; tipo: EmailEstado; email: string } | null>(null);
+  const [morosoEmailSending, setMorosoEmailSending] = useState(false);
+  const [morosoEmailPreviewUser, setMorosoEmailPreviewUser] = useState<R11MorosoUser | null>(null);
+  const [morosoActing, setMorosoActing] = useState<number | null>(null);
+
+  /* ─── R11 Morosos bulk action state ─── */
+  const [morosoBulkSending, setMorosoBulkSending] = useState(false);
+  const [morosoBulkResult, setMorosoBulkResult] = useState<{ total_sent: number; total_failed: number; failed: string[] } | null>(null);
+
   const handleTabChange = useCallback((key: string) => {
     setActiveTab(key as CreditTab);
   }, []);
@@ -339,13 +355,14 @@ export default function CreditosSection({ onHeaderConfig }: CreditosSectionProps
       tabs: [
         { key: 'r11', label: 'Créditos R11' },
         { key: 'rl6', label: 'Créditos RL6' },
+        { key: 'morosos', label: 'Morosos qls' },
         { key: 'solicitudes', label: 'Solicitudes' },
       ],
       activeTab,
       onTabChange: handleTabChange,
       trailing: (
         <CreditSummaryTrailing
-          activeTab={activeTab === 'solicitudes' ? 'rl6' : activeTab}
+          activeTab={activeTab === 'r11' ? 'r11' : 'rl6'}
           rl6Summary={rl6Summary}
           r11Data={credits}
           loading={activeTab === 'r11' ? r11Loading : rl6Loading}
@@ -403,6 +420,25 @@ export default function CreditosSection({ onHeaderConfig }: CreditosSectionProps
       fetchPending();
     }
   }, [activeTab, fetchPending]);
+
+  /* ─── R11 Morosos data fetch ─── */
+  const fetchMorosos = useCallback(() => {
+    setMorososLoading(true);
+    setMorososError('');
+    apiFetch<{ success: boolean; data: R11MorosoUser[]; summary: { total: number; total_deuda: number } }>('/admin/credits/r11/morosos')
+      .then(res => {
+        setMorososData(res.data || []);
+        setMorososSummary(res.summary || null);
+      })
+      .catch(e => setMorososError(e.message))
+      .finally(() => setMorososLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'morosos') {
+      fetchMorosos();
+    }
+  }, [activeTab, fetchMorosos]);
 
   /* ─── User has pending receipt? ─── */
   const userHasPendingReceipt = (userId: number) =>
@@ -581,6 +617,75 @@ export default function CreditosSection({ onHeaderConfig }: CreditosSectionProps
       alert(`Error en envío masivo: ${err.message}`);
     } finally {
       setBulkSending(false);
+    }
+  };
+
+  /* ─── R11 Morosos email preview & send ─── */
+  const morosoPreviewEmail = async (user: R11MorosoUser) => {
+    setMorosoEmailPreviewUser(user);
+    setMorosoActing(user.id);
+    try {
+      const res = await apiFetch<{ html: string; tipo: EmailEstado; email: string }>(
+        `/admin/credits/r11/${user.id}/preview-email`
+      );
+      setMorosoEmailPreview({ html: res.html, tipo: res.tipo, email: res.email });
+    } catch (err: any) {
+      alert(err.message);
+      setMorosoEmailPreviewUser(null);
+    } finally {
+      setMorosoActing(null);
+    }
+  };
+
+  const morosoSendEmail = async () => {
+    if (!morosoEmailPreviewUser) return;
+    setMorosoEmailSending(true);
+    try {
+      const res = await apiFetch<{ success: boolean }>(
+        `/admin/credits/r11/${morosoEmailPreviewUser.id}/send-email`,
+        { method: 'POST' }
+      );
+      setMorosoEmailPreview(null);
+      setMorosoEmailPreviewUser(null);
+      alert('Email enviado correctamente');
+    } catch (err: any) {
+      alert(`Error al enviar email: ${err.message}`);
+    } finally {
+      setMorosoEmailSending(false);
+    }
+  };
+
+  const closeMorosoEmailPreview = () => {
+    if (!morosoEmailSending) {
+      setMorosoEmailPreview(null);
+      setMorosoEmailPreviewUser(null);
+    }
+  };
+
+  /* ─── R11 Morosos bulk email ─── */
+  const morosoBulkEmail = async () => {
+    if (morososData.length === 0) return;
+    if (!confirm(`¿Enviar email de cobranza a ${morososData.length} moroso${morososData.length > 1 ? 's' : ''}?`)) return;
+
+    setMorosoBulkSending(true);
+    setMorosoBulkResult(null);
+    try {
+      const res = await apiFetch<{ total_sent: number; total_failed: number; failed: { user_id: number }[] }>(
+        '/admin/credits/r11/send-bulk-emails',
+        {
+          method: 'POST',
+          body: JSON.stringify({ user_ids: morososData.map(u => u.id) }),
+        }
+      );
+      setMorosoBulkResult({
+        total_sent: res.total_sent,
+        total_failed: res.total_failed,
+        failed: res.failed?.map(f => String(f.user_id)) ?? [],
+      });
+    } catch (err: any) {
+      alert(`Error en envío masivo: ${err.message}`);
+    } finally {
+      setMorosoBulkSending(false);
     }
   };
 
@@ -980,11 +1085,107 @@ export default function CreditosSection({ onHeaderConfig }: CreditosSectionProps
     );
   };
 
+  /* ─── Render Morosos qls tab ─── */
+  const renderMorosos = () => {
+    if (morososLoading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-amber-600" /></div>;
+    if (morososError) return <div className="rounded-lg bg-red-50 p-4 text-red-600">{morososError}</div>;
+
+    if (morososData.length === 0) {
+      return (
+        <div className="rounded-xl border bg-white p-8 text-center shadow-sm">
+          <p className="text-sm text-gray-500">¡Bien! Sin deudores R11</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={morosoBulkEmail}
+            disabled={morosoBulkSending}
+            className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+          >
+            {morosoBulkSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <AlertTriangle className="h-4 w-4" />}
+            {morosoBulkSending ? 'Enviando...' : `Cobrar a todos (${morososData.length})`}
+          </button>
+        </div>
+
+        {morosoBulkResult && (
+          <div className={cn(
+            'rounded-lg p-3 text-sm',
+            morosoBulkResult.total_failed > 0 ? 'bg-amber-50 text-amber-800' : 'bg-green-50 text-green-800'
+          )}>
+            <p className="font-medium">
+              Enviados: {morosoBulkResult.total_sent} · Fallidos: {morosoBulkResult.total_failed}
+            </p>
+            {morosoBulkResult.failed.length > 0 && (
+              <p className="mt-1 text-xs">Fallaron IDs: {morosoBulkResult.failed.join(', ')}</p>
+            )}
+            <button onClick={() => setMorosoBulkResult(null)} className="mt-1 text-xs underline">Cerrar</button>
+          </div>
+        )}
+
+        <div className="overflow-x-auto rounded-xl border bg-white shadow-sm">
+          <table className="w-full text-sm">
+            <thead className="border-b bg-gray-50 text-left text-xs font-medium text-gray-500">
+              <tr>
+                <th className="px-4 py-3">Nombre</th>
+                <th className="px-4 py-3">Relación</th>
+                <th className="px-4 py-3">Deuda</th>
+                <th className="px-4 py-3">Límite</th>
+                <th className="px-4 py-3">Disponible</th>
+                <th className="px-4 py-3">Días sin pagar</th>
+                <th className="px-4 py-3">Último pago</th>
+                <th className="px-4 py-3">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {morososData.map(u => (
+                <tr key={u.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 font-medium">{u.nombre}</td>
+                  <td className="px-4 py-3 text-gray-600">{u.relacion || '—'}</td>
+                  <td className="px-4 py-3 font-semibold text-red-600">{formatCLP(u.credito_usado)}</td>
+                  <td className="px-4 py-3">{formatCLP(u.limite_credito)}</td>
+                  <td className="px-4 py-3 text-green-600 font-medium">{formatCLP(u.disponible)}</td>
+                  <td className="px-4 py-3">
+                    <span className={cn(
+                      'font-medium',
+                      u.dias_sin_pago > 60 ? 'text-red-600' : u.dias_sin_pago > 30 ? 'text-orange-600' : 'text-gray-600'
+                    )}>
+                      {u.dias_sin_pago}d
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-gray-500 text-xs">
+                    {u.fecha_ultimo_pago ? new Date(u.fecha_ultimo_pago).toLocaleDateString('es-CL') : '—'}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex gap-1">
+                      <button onClick={() => morosoPreviewEmail(u)} disabled={morosoActing === u.id}
+                        className="rounded p-1 hover:bg-blue-50" title="Enviar Email">
+                        <Mail className="h-4 w-4 text-blue-500" />
+                      </button>
+                      <button onClick={() => r11Action(u.id, 'manual-payment')} disabled={acting === u.id}
+                        className="rounded p-1 hover:bg-gray-100" title="Pago manual">
+                        <DollarSign className="h-4 w-4 text-gray-500" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
   /* ─── Main render ─── */
   return (
     <div className="space-y-4 pt-4">
       {activeTab === 'r11' && renderR11()}
       {activeTab === 'rl6' && renderRL6()}
+      {activeTab === 'morosos' && renderMorosos()}
       {activeTab === 'solicitudes' && renderSolicitudes()}
 
       {/* User detail modal */}
@@ -995,7 +1196,7 @@ export default function CreditosSection({ onHeaderConfig }: CreditosSectionProps
         />
       )}
 
-      {/* Email preview modal */}
+      {/* RL6 Email preview modal */}
       <EmailPreviewModal
         open={!!emailPreview}
         onClose={closeEmailPreview}
@@ -1004,6 +1205,17 @@ export default function CreditosSection({ onHeaderConfig }: CreditosSectionProps
         emailTipo={emailPreview?.tipo ?? 'recordatorio'}
         recipientEmail={emailPreview?.email ?? ''}
         sending={emailSending}
+      />
+
+      {/* R11 Moroso Email preview modal */}
+      <EmailPreviewModal
+        open={!!morosoEmailPreview}
+        onClose={closeMorosoEmailPreview}
+        onConfirm={morosoSendEmail}
+        html={morosoEmailPreview?.html ?? ''}
+        emailTipo={morosoEmailPreview?.tipo ?? 'recordatorio'}
+        recipientEmail={morosoEmailPreview?.email ?? ''}
+        sending={morosoEmailSending}
       />
     </div>
   );

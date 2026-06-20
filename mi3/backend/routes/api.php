@@ -171,6 +171,12 @@ Route::prefix('v1')->group(function () {
         Route::post('credits/{id}/reject', [\App\Http\Controllers\Admin\CreditController::class, 'reject']);
         Route::post('credits/{id}/manual-payment', [\App\Http\Controllers\Admin\CreditController::class, 'manualPayment']);
 
+        // Créditos R11 — Morosos
+        Route::get('credits/r11/morosos', [\App\Http\Controllers\Admin\CreditController::class, 'r11Morosos']);
+        Route::post('credits/r11/send-bulk-emails', [\App\Http\Controllers\Admin\CreditController::class, 'r11SendBulkEmails']);
+        Route::get('credits/r11/{id}/preview-email', [\App\Http\Controllers\Admin\CreditController::class, 'r11PreviewEmail']);
+        Route::post('credits/r11/{id}/send-email', [\App\Http\Controllers\Admin\CreditController::class, 'r11SendEmail']);
+
         // Créditos RL6 (static route MUST come before {id} routes)
         Route::post('credits/rl6/send-bulk-emails', [\App\Http\Controllers\Admin\CreditController::class, 'rl6SendBulkEmails']);
         Route::get('credits/rl6', [\App\Http\Controllers\Admin\CreditController::class, 'rl6Index']);

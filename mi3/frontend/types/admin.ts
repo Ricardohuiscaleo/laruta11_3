@@ -74,6 +74,21 @@ export interface PaymentReceipt {
   user_grado: string | null;
 }
 
+/** R11 Moroso User (from GET /admin/credits/r11/morosos) */
+export interface R11MorosoUser {
+  id: number;
+  nombre: string;
+  email: string;
+  telefono: string;
+  relacion: string | null;
+  limite_credito: number;
+  credito_usado: number;
+  disponible: number;
+  fecha_ultimo_pago: string | null;
+  dias_sin_pago: number;
+  bloqueado: boolean;
+}
+
 /** Pending credit application */
 export interface PendingCredit {
   id: number;
