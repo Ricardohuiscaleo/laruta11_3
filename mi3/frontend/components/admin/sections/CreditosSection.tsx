@@ -548,9 +548,9 @@ export default function CreditosSection({ onHeaderConfig }: CreditosSectionProps
   /* ─── Bulk email "Cobrar a Morosos" ─── */
   const morosos = rl6Data?.filter(u => {
     if (u.credito_usado <= 0) return false;
-    if (!u.ultima_compra) return false;
-    const daysSincePurchase = Math.floor((Date.now() - new Date(u.ultima_compra).getTime()) / (1000 * 60 * 60 * 24));
-    return daysSincePurchase > 40;
+    if (!u.fecha_ultimo_pago) return true;
+    const daysSinceLastPay = Math.floor((Date.now() - new Date(u.fecha_ultimo_pago).getTime()) / (1000 * 60 * 60 * 24));
+    return daysSinceLastPay > 40;
   }) ?? [];
 
   const rl6BulkEmail = async () => {
@@ -980,8 +980,8 @@ export default function CreditosSection({ onHeaderConfig }: CreditosSectionProps
             </thead>
             <tbody className="divide-y">
               {morosos.map(u => {
-                const diasMora = u.ultima_compra
-                  ? Math.floor((Date.now() - new Date(u.ultima_compra).getTime()) / (1000 * 60 * 60 * 24))
+                const diasMora = u.fecha_ultimo_pago
+                  ? Math.floor((Date.now() - new Date(u.fecha_ultimo_pago).getTime()) / (1000 * 60 * 60 * 24))
                   : null;
                 return (
                 <tr key={u.id} className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => setSelectedUser(u)}>
@@ -999,7 +999,7 @@ export default function CreditosSection({ onHeaderConfig }: CreditosSectionProps
                     )}
                   </td>
                   <td className="px-4 py-3 text-gray-500 text-xs">
-                    {u.ultima_compra ? new Date(u.ultima_compra).toLocaleDateString('es-CL') : '—'}
+                    {u.fecha_ultimo_pago ? new Date(u.fecha_ultimo_pago).toLocaleDateString('es-CL') : '—'}
                   </td>
                   <td className="px-4 py-3 text-gray-500 text-xs">
                     {u.ultimo_email_enviado ? (
