@@ -546,7 +546,13 @@ export default function CreditosSection({ onHeaderConfig }: CreditosSectionProps
   };
 
   /* ─── Bulk email "Cobrar a Morosos" ─── */
-  const morosos = rl6Data?.filter(u => u.es_moroso) ?? [];
+  const morosos = rl6Data?.filter(u => {
+    if (u.credito_usado <= 0) return false;
+    if (!u.fecha_ultimo_pago) return true;
+    const lastPay = new Date(u.fecha_ultimo_pago);
+    const now = new Date();
+    return lastPay.getMonth() !== now.getMonth() || lastPay.getFullYear() !== now.getFullYear();
+  }) ?? [];
 
   const rl6BulkEmail = async () => {
     if (morosos.length === 0) return;
@@ -967,20 +973,30 @@ export default function CreditosSection({ onHeaderConfig }: CreditosSectionProps
                 <th className="px-4 py-3">RUT</th>
                 <th className="px-4 py-3">Grado</th>
                 <th className="px-4 py-3">Deuda</th>
-                <th className="px-4 py-3">Días Mora</th>
+                <th className="px-4 py-3">Días sin pagar</th>
+                <th className="px-4 py-3">Último pago</th>
                 <th className="px-4 py-3">Último Email</th>
                 <th className="px-4 py-3">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y">
-              {morosos.map(u => (
+              {morosos.map(u => {
+                const diasSinPago = u.fecha_ultimo_pago
+                  ? Math.floor((Date.now() - new Date(u.fecha_ultimo_pago).getTime()) / (1000 * 60 * 60 * 24))
+                  : 999;
+                return (
                 <tr key={u.id} className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => setSelectedUser(u)}>
                   <td className="px-4 py-3 font-medium">{u.nombre}</td>
                   <td className="px-4 py-3 text-gray-600">{u.rut || '—'}</td>
                   <td className="px-4 py-3 text-gray-600">{u.grado_militar || '—'}</td>
                   <td className="px-4 py-3 font-semibold text-red-600">{formatCLP(u.credito_usado)}</td>
                   <td className="px-4 py-3">
-                    <span className="font-medium text-red-600">{u.dias_mora}d</span>
+                    <span className={cn('font-medium', diasSinPago > 60 ? 'text-red-600' : 'text-orange-600')}>
+                      {diasSinPago}d
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-gray-500 text-xs">
+                    {u.fecha_ultimo_pago ? new Date(u.fecha_ultimo_pago).toLocaleDateString('es-CL') : 'Nunca'}
                   </td>
                   <td className="px-4 py-3 text-gray-500 text-xs">
                     {u.ultimo_email_enviado ? (
@@ -1005,7 +1021,8 @@ export default function CreditosSection({ onHeaderConfig }: CreditosSectionProps
                     </div>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
