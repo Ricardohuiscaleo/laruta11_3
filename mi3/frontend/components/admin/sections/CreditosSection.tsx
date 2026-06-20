@@ -548,6 +548,8 @@ export default function CreditosSection({ onHeaderConfig }: CreditosSectionProps
   /* ─── Bulk email "Cobrar a Morosos" ─── */
   const morosos = rl6Data?.filter(u => {
     if (u.credito_usado <= 0) return false;
+    const deudaAntigua = u.credito_usado - (u.deuda_ciclo_vencido ?? 0);
+    if (deudaAntigua <= 0) return false;
     if (!u.fecha_ultimo_pago) return true;
     const daysSinceLastPay = Math.floor((Date.now() - new Date(u.fecha_ultimo_pago).getTime()) / (1000 * 60 * 60 * 24));
     return daysSinceLastPay > 40;

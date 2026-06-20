@@ -256,8 +256,18 @@ class RL6CreditService
         $pagoEsteMes = !empty($fechaPago) && substr($fechaPago, 0, 7) === Carbon::now()->format('Y-m');
         $deudaCicloVencido = (float) ($userData['deuda_ciclo_vencido'] ?? 0);
         $soloDeudaCicloNuevo = $creditoUsado > 0 && $deudaCicloVencido <= 0;
+        $tieneDeudaAntigua = $creditoUsado > $deudaCicloVencido;
 
-        if ($pagoEsteMes || $soloDeudaCicloNuevo) {
+        if ($pagoEsteMes) {
+            return 'recordatorio';
+        }
+
+        // Has old unpaid debt from previous cycles — always overdue
+        if ($tieneDeudaAntigua) {
+            return $day > 21 ? 'moroso' : 'urgente';
+        }
+
+        if ($soloDeudaCicloNuevo) {
             return 'recordatorio';
         }
 
@@ -350,9 +360,10 @@ class RL6CreditService
         }
         $mes = $meses[$mesIdx];
 
-        // Calculate dias_restantes and dias_mora based on tipo
+        // Calculate dias_restantes and dias_mora based on tipo and debt structure
         $diasRestantes = 0;
         $diasMora = 0;
+        $tieneDeudaAntigua = $creditoUsado > $deudaCicloVencido;
         if ($tipo === 'recordatorio') {
             if ($pagoEsteMes || $soloDeudaCicloNuevo) {
                 $nextMonth21 = Carbon::parse($now->format('Y-m') . '-21')->addMonth();
@@ -360,8 +371,13 @@ class RL6CreditService
             } else {
                 $diasRestantes = 21 - $day;
             }
-        } elseif ($tipo === 'moroso') {
-            $diasMora = $day - 21;
+        }
+        if ($tipo === 'urgente' || $tipo === 'moroso') {
+            if ($tieneDeudaAntigua && !empty($fechaPago)) {
+                $diasMora = (int) Carbon::parse($fechaPago)->startOfDay()->diffInDays($now->startOfDay(), false);
+            } elseif ($tipo === 'moroso') {
+                $diasMora = $day - 21;
+            }
         }
 
         $anioActual = date('Y');
@@ -464,6 +480,12 @@ class RL6CreditService
         }
 
         if ($tipo === 'urgente') {
+            if ($diasMora > 0) {
+                $diasTxt = $diasMora === 1 ? 'día' : 'días';
+                return "{$td}<div style='background:{$t['badge_bg']};border:2px solid {$t['border']};border-radius:16px;padding:16px 20px;text-align:center;'>"
+                    . "<p style='color:{$t['badge_color']};font-size:15px;font-weight:800;margin:0;'>"
+                    . "⚠️ Tu pago vencido hace <strong>{$diasMora} {$diasTxt}</strong> — Regulariza tu situación</p></div></td></tr>";
+            }
             $venceTxt = $diasRestantes === 0 ? 'HOY' : "en {$diasRestantes} día" . ($diasRestantes === 1 ? '' : 's');
             return "{$td}<div style='background:{$t['badge_bg']};border:2px solid {$t['border']};border-radius:16px;padding:16px 20px;text-align:center;'>"
                 . "<p style='color:{$t['badge_color']};font-size:15px;font-weight:800;margin:0;'>"
