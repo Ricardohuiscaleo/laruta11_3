@@ -21,6 +21,7 @@ export interface RL6CreditUser {
   dias_mora: number;
   deuda_ciclo_vencido: number;
   pagado_este_mes: number;
+  ultima_compra: string | null;
   ultimo_email_enviado: string | null;
   ultimo_email_tipo: string | null;
 }

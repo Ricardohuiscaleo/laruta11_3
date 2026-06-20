@@ -68,10 +68,19 @@ class RL6CreditService
             ->groupBy('user_id')
             ->map(fn($logs) => $logs->first());
 
-        $data = $users->map(function ($user) use ($deudaCicloVencido, $pagosEsteMes, $ultimoEmails) {
+        // Última compra (debit) por usuario
+        $ultimasCompras = Rl6CreditTransaction::whereIn('user_id', $userIds)
+            ->where('type', 'debit')
+            ->orderByDesc('created_at')
+            ->get()
+            ->groupBy('user_id')
+            ->map(fn($txs) => $txs->first()->created_at);
+
+        $data = $users->map(function ($user) use ($deudaCicloVencido, $pagosEsteMes, $ultimoEmails, $ultimasCompras) {
             $deudaCiclo = (float) ($deudaCicloVencido[$user->id] ?? 0);
             $pagadoEsteMes = (float) ($pagosEsteMes[$user->id] ?? 0);
             $ultimoEmail = $ultimoEmails[$user->id] ?? null;
+            $ultimaCompra = $ultimasCompras[$user->id] ?? null;
 
             [$esMoroso, $diasMora] = $this->calculateMoroso($user, $deudaCiclo);
 
@@ -89,6 +98,7 @@ class RL6CreditService
                 'credito_aprobado' => (bool) $user->credito_aprobado,
                 'credito_bloqueado' => (bool) $user->credito_bloqueado,
                 'fecha_ultimo_pago' => $user->fecha_ultimo_pago,
+                'ultima_compra' => $ultimaCompra?->toDateTimeString(),
                 'es_moroso' => $esMoroso,
                 'dias_mora' => $diasMora,
                 'deuda_ciclo_vencido' => $deudaCiclo,
