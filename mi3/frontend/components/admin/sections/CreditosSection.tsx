@@ -329,6 +329,46 @@ export default function CreditosSection({ onHeaderConfig }: CreditosSectionProps
   const [pendingLoading, setPendingLoading] = useState(false);
   const [pendingActing, setPendingActing] = useState<number | null>(null);
 
+  /* ─── Multi-select state ─── */
+  const [selectedRl6Ids, setSelectedRl6Ids] = useState<Set<number>>(new Set());
+  const [bulkArchiveLoading, setBulkArchiveLoading] = useState(false);
+
+  const toggleRl6Selection = (id: number) => {
+    setSelectedRl6Ids(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAllRl6 = () => {
+    if (!rl6Data) return;
+    if (selectedRl6Ids.size === rl6Data.length) {
+      setSelectedRl6Ids(new Set());
+    } else {
+      setSelectedRl6Ids(new Set(rl6Data.map(u => u.id)));
+    }
+  };
+
+  const bulkArchiveRl6 = async () => {
+    const ids = Array.from(selectedRl6Ids);
+    if (ids.length === 0) return;
+    if (!confirm(`¿Archivar ${ids.length} usuario${ids.length > 1 ? 's' : ''} seleccionado${ids.length > 1 ? 's' : ''}?`)) return;
+    setBulkArchiveLoading(true);
+    let ok = 0, fail = 0;
+    for (const id of ids) {
+      try {
+        await apiFetch(`/admin/credits/rl6/${id}/archive`, { method: 'POST' });
+        ok++;
+      } catch { fail++; }
+    }
+    setRl6Data(prev => prev?.filter(u => !ids.includes(u.id)) ?? null);
+    setRl6Summary(prev => prev ? { ...prev, total_usuarios: prev.total_usuarios - ok } : null);
+    setSelectedRl6Ids(new Set());
+    setBulkArchiveLoading(false);
+    if (fail > 0) alert(`Archivados: ${ok}, fallaron: ${fail}`);
+  };
+
   const handleTabChange = useCallback((key: string) => {
     setActiveTab(key as CreditTab);
   }, []);
@@ -794,9 +834,63 @@ export default function CreditosSection({ onHeaderConfig }: CreditosSectionProps
         )}
 
       <div className="overflow-x-auto rounded-xl border bg-white shadow-sm">
+        {selectedRl6Ids.size > 0 && (
+          <div className="sticky top-0 z-10 flex items-center gap-3 border-b bg-blue-50 px-4 py-2.5 text-sm">
+            <span className="font-medium text-blue-800">{selectedRl6Ids.size} seleccionado{selectedRl6Ids.size > 1 ? 's' : ''}</span>
+            <button
+              onClick={async () => {
+                const ids = Array.from(selectedRl6Ids);
+                if (!confirm(`¿Enviar email de cobranza a ${ids.length} usuario${ids.length > 1 ? 's' : ''}?`)) return;
+                setBulkSending(true);
+                try {
+                  const res = await apiFetch<{ total_sent: number; total_failed: number; failed: { nombre: string }[] }>(
+                    '/admin/credits/rl6/send-bulk-emails',
+                    { method: 'POST', body: JSON.stringify({ user_ids: ids }) }
+                  );
+                  const now = new Date().toISOString();
+                  const failedNames = new Set(res.failed?.map(f => f.nombre) ?? []);
+                  setRl6Data(prev => prev?.map(u =>
+                    ids.includes(u.id) && !failedNames.has(u.nombre)
+                      ? { ...u, ultimo_email_enviado: now, ultimo_email_tipo: 'cobranza' }
+                      : u
+                  ) ?? null);
+                  setBulkResult({ total_sent: res.total_sent, total_failed: res.total_failed, failed: res.failed?.map(f => f.nombre) ?? [] });
+                } catch (err: any) { alert(`Error: ${err.message}`); }
+                finally { setBulkSending(false); }
+              }}
+              disabled={bulkSending}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              {bulkSending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Mail className="h-3 w-3" />}
+              {bulkSending ? 'Enviando...' : 'Enviar Email'}
+            </button>
+            <button
+              onClick={bulkArchiveRl6}
+              disabled={bulkArchiveLoading}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-700 disabled:opacity-50"
+            >
+              {bulkArchiveLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Archive className="h-3 w-3" />}
+              {bulkArchiveLoading ? 'Archivando...' : 'Archivar'}
+            </button>
+            <button
+              onClick={() => setSelectedRl6Ids(new Set())}
+              className="ml-auto rounded px-2 py-1 text-xs text-gray-500 hover:text-gray-700"
+            >
+              Limpiar
+            </button>
+          </div>
+        )}
         <table className="w-full text-sm">
           <thead className="border-b bg-gray-50 text-left text-xs font-medium text-gray-500">
             <tr>
+              <th className="w-10 px-2 py-3">
+                <input
+                  type="checkbox"
+                  checked={rl6Data.length > 0 && selectedRl6Ids.size === rl6Data.length}
+                  onChange={toggleSelectAllRl6}
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+              </th>
               <th className="px-4 py-3">Nombre</th>
               <th className="px-4 py-3">RUT</th>
               <th className="px-4 py-3">Grado</th>
@@ -810,12 +904,22 @@ export default function CreditosSection({ onHeaderConfig }: CreditosSectionProps
             </tr>
           </thead>
           <tbody className="divide-y">
-            {rl6Data.map(u => (
+            {rl6Data.map(u => {
+              const isSelected = selectedRl6Ids.has(u.id);
+              return (
               <tr
                 key={u.id}
                 onClick={() => setSelectedUser(u)}
-                className="cursor-pointer hover:bg-gray-50 transition-colors"
+                className={cn('cursor-pointer transition-colors', isSelected ? 'bg-blue-50' : 'hover:bg-gray-50')}
               >
+                <td className="w-10 px-2 py-3" onClick={e => { e.stopPropagation(); toggleRl6Selection(u.id); }}>
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => toggleRl6Selection(u.id)}
+                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                </td>
                 <td className="px-4 py-3 font-medium">{u.nombre}</td>
                 <td className="px-4 py-3 text-gray-600">{u.rut || '—'}</td>
                 <td className="px-4 py-3 text-gray-600">{u.grado_militar || '—'}</td>
@@ -865,7 +969,8 @@ export default function CreditosSection({ onHeaderConfig }: CreditosSectionProps
                   </div>
                 </td>
               </tr>
-            ))}
+            );
+            })}
           </tbody>
         </table>
       </div>
