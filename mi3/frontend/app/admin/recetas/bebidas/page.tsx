@@ -416,7 +416,68 @@ export default function BebidasTab() {
             <option key={name} value={name}>{name}</option>
           ))}
         </select>
+        <button
+          onClick={() => { setShowAddForm(!showAddForm); if (!showAddForm) { setForm(emptyForm); setFormErrors({}); setBevImage(null); } }}
+          className={cn(
+            'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors min-h-[44px] flex-shrink-0',
+            showAddForm
+              ? 'border border-gray-200 text-gray-600 hover:bg-gray-50'
+              : 'bg-red-500 text-white hover:bg-red-600'
+          )}
+          aria-label={showAddForm ? 'Cancelar' : 'Agregar bebida'}
+        >
+          {showAddForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+          {showAddForm ? 'Cancelar' : 'Agregar Bebida'}
+        </button>
       </div>
+
+      {showAddForm && (
+        <div className="rounded-xl border bg-white p-4 shadow-sm space-y-3" role="form" aria-label="Agregar bebida">
+          <h3 className="text-sm font-semibold text-gray-700">Nueva Bebida</h3>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Nombre *</label>
+              <input type="text" value={form.name} onChange={e => updateField('name', e.target.value)}
+                className={cn('w-full rounded-lg border px-3 py-2 text-sm', formErrors.name && 'border-red-400')} placeholder="Ej: Coca-Cola 1.5L" />
+              {formErrors.name && <p className="mt-0.5 text-xs text-red-500">{formErrors.name}</p>}
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Precio *</label>
+              <input type="number" value={form.price} onChange={e => updateField('price', e.target.value)}
+                className={cn('w-full rounded-lg border px-3 py-2 text-sm', formErrors.price && 'border-red-400')} placeholder="2990" />
+              {formErrors.price && <p className="mt-0.5 text-xs text-red-500">{formErrors.price}</p>}
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Costo</label>
+              <input type="number" value={form.cost_price} onChange={e => updateField('cost_price', e.target.value)}
+                className="w-full rounded-lg border px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Subcategoría</label>
+              <select value={form.subcategory_id} onChange={e => updateField('subcategory_id', e.target.value)}
+                className="w-full rounded-lg border px-3 py-2 text-sm">
+                <option value="">Sin subcategoría</option>
+                {subcategories.map(sc => (
+                  <option key={sc.id} value={sc.id}>{sc.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Descripción</label>
+            <textarea value={form.description} onChange={e => updateField('description', e.target.value)}
+              className="w-full rounded-lg border px-3 py-2 text-sm" rows={2} />
+          </div>
+          <div className="flex gap-2">
+            <button onClick={handleSubmit} disabled={saving}
+              className="rounded-lg bg-red-600 px-4 py-2 text-sm text-white disabled:opacity-50">
+              {saving ? 'Guardando...' : 'Crear Bebida'}
+            </button>
+            <button onClick={() => setShowAddForm(false)}
+              className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Cancelar</button>
+          </div>
+        </div>
+      )}
 
       <div className="text-xs text-gray-500">
         {filtered.length} bebida{filtered.length !== 1 ? 's' : ''} en {groupKeys.length} subcategoría{groupKeys.length !== 1 ? 's' : ''}

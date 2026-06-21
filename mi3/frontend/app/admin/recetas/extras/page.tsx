@@ -44,6 +44,7 @@ export default function ExtrasTab() {
   const [search, setSearch] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [dragOverRow, setDragOverRow] = useState<number | null>(null);
+  const [flashIds, setFlashIds] = useState<Set<number>>(new Set());
 
   const fetchExtras = useCallback(async () => {
     setLoading(true);
@@ -79,6 +80,8 @@ export default function ExtrasTab() {
         method: 'PUT',
         body: JSON.stringify({ is_active: newActive }),
       });
+      setFlashIds(new Set([item.id]));
+      setTimeout(() => setFlashIds(new Set()), 800);
     } catch {
       updateExtras(e => e.id === item.id ? { ...e, is_active: !newActive } : e, new Set([item.id]));
     }
@@ -264,7 +267,8 @@ export default function ExtrasTab() {
                   className={cn(
                     'transition-colors',
                     !item.is_active && 'opacity-50',
-                    dragOverRow === item.id ? 'ring-2 ring-red-400 bg-red-50' : 'hover:bg-gray-50'
+                    dragOverRow === item.id ? 'ring-2 ring-red-400 bg-red-50' : 'hover:bg-gray-50',
+                    flashIds.has(item.id) && 'bg-green-100 transition-colors duration-500'
                   )}>
                   <td className="px-3 py-2">
                     <input type="checkbox" checked={selectedIds.has(item.id)} onChange={() => toggleSelect(item.id)}
@@ -284,8 +288,17 @@ export default function ExtrasTab() {
                   <td className="px-3 py-2">{item.sale_price ? formatCLP(item.sale_price) : '-'}</td>
                   <td className="px-3 py-2">
                     <button onClick={() => handleToggleActive(item)}
-                      className={item.is_active ? 'text-green-600' : 'text-gray-400'}>
-                      {item.is_active ? <ToggleRight className="h-5 w-5" /> : <ToggleLeft className="h-5 w-5" />}
+                      className={cn(
+                        'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold transition-colors min-h-[28px]',
+                        item.is_active
+                          ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                          : 'bg-red-100 text-red-600 hover:bg-red-200'
+                      )}
+                      aria-label={item.is_active ? `Desactivar ${item.name}` : `Activar ${item.name}`}>
+                      {item.is_active
+                        ? <><ToggleRight className="h-3 w-3" /> ON</>
+                        : <><ToggleLeft className="h-3 w-3" /> OFF</>
+                      }
                     </button>
                   </td>
                   <td className="px-3 py-2">
