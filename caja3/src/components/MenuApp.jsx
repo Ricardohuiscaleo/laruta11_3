@@ -224,11 +224,15 @@ function CartModal({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                     <div className="mt-2 pt-2 border-t border-gray-200">
                       <p className="text-xs font-medium text-gray-700 mb-1">Incluye:</p>
                       <div className="space-y-1">
-                        {item.customizations.map((custom, idx) => (
-                          <p key={idx} className="text-xs text-blue-600 font-medium">
-                            • {custom.quantity}x {custom.name} (+${(custom.price * custom.quantity).toLocaleString('es-CL')})
-                          </p>
-                        ))}
+                        {item.customizations.map((custom, idx) => {
+                          if (custom.isDip) {
+                            return <p key={idx} className="text-xs text-orange-600 font-medium">• {custom.quantity || 1}x {custom.name} dip (+${((custom.price || 500) * (custom.quantity || 1)).toLocaleString('es-CL')})</p>;
+                          }
+                          if (custom.isSauce) {
+                            return <p key={idx} className="text-xs text-orange-600 font-medium">• {custom.name}{custom.price > 0 ? ` (+$${custom.price.toLocaleString('es-CL')})` : ''}</p>;
+                          }
+                          return <p key={idx} className="text-xs text-blue-600 font-medium">• {custom.quantity}x {custom.name} (+${(custom.price * custom.quantity).toLocaleString('es-CL')})</p>;
+                        })}
                       </div>
                     </div>
                   )}

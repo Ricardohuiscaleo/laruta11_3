@@ -651,7 +651,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                     className="w-2.5 h-2.5 accent-orange-600"
                   />
                   <span className={`text-[9px] font-bold ${checkedItems[itemKey] ? 'line-through text-orange-300' : 'text-orange-800'}`}>
-                    {custom.quantity || item.quantity}x {custom.name}
+                    {custom.quantity || item.quantity}x {custom.name}{custom.isDip ? ' (dip)' : ''}
                   </span>
                 </label>
               );
@@ -902,7 +902,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                         });
                       })}
                       {comboData && comboData.customizations && comboData.customizations.length > 0 && comboData.customizations.map((c, idx) => (
-                        <div key={idx} className="text-orange-700 font-bold">+ {c.quantity || item.quantity}x {c.name}</div>
+                        <div key={idx} className="text-orange-700 font-bold">+ {c.quantity || item.quantity}x {c.name}{c.isDip ? ' (dip)' : ''}</div>
                       ))}
                     </div>
                   )}

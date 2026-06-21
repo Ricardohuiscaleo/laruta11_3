@@ -238,9 +238,15 @@ const PaymentPendingModal = ({ isOpen, onClose, paymentType, orderData }) => {
                         {/* Customizations */}
                         {item.customizations && item.customizations.length > 0 && (
                           <div className="text-xs text-blue-600 mt-1">
-                            {item.customizations.map((c, i) => (
-                              <div key={i}>+ {c.quantity}x {c.name} (+${(c.price * c.quantity).toLocaleString('es-CL')})</div>
-                            ))}
+                            {item.customizations.map((c, i) => {
+                              if (c.isDip) {
+                                return <div key={i}>+ {c.quantity || 1}x {c.name} dip (+${((c.price || 500) * (c.quantity || 1)).toLocaleString('es-CL')})</div>;
+                              }
+                              if (c.isSauce) {
+                                return <div key={i}>+ {c.name}{c.price > 0 ? ` (+$${c.price.toLocaleString('es-CL')})` : ''}</div>;
+                              }
+                              return <div key={i}>+ {c.quantity}x {c.name} (+${(c.price * c.quantity).toLocaleString('es-CL')})</div>;
+                            })}
                           </div>
                         )}
 
@@ -250,8 +256,10 @@ const PaymentPendingModal = ({ isOpen, onClose, paymentType, orderData }) => {
                               <div key={ci} className="font-medium">
                                 🎯 {comp.label || comp.product_name || comp.name || 'Producto'}: {comp.customizations.map((cust, custIdx) =>
                                   cust.isSauce
-                                    ? `${cust.name}${custIdx === 0 ? ' (1ra gratis)' : ' (+$500)'}`
-                                    : `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`
+                                    ? `${cust.name}${(() => { let sc = 0; for (let i = 0; i < custIdx; i++) if (comp.customizations[i].isSauce) sc++; return sc < 3 ? '' : ` (+$300)`; })()}`
+                                    : cust.isDip
+                                      ? `${cust.quantity || 1}x ${cust.name} dip (+$${((cust.price || 500) * (cust.quantity || 1)).toLocaleString('es-CL')})`
+                                      : `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`
                                 ).join(', ')}
                               </div>
                             ))}
