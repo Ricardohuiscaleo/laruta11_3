@@ -3506,9 +3506,12 @@ export default function App() {
                             <div className="ml-2 mt-1 text-xs text-gray-600">
                               <span className="font-medium">Incluye:</span>
                               <div className="mt-1 space-y-0.5">
-                                {item.customizations.filter(c => !c.isSauce).map((custom, idx) => (
-                                  <div key={idx} className="text-blue-600">• {custom.quantity}x {custom.name} (+${(custom.price * custom.quantity).toLocaleString('es-CL')})</div>
-                                ))}
+                                {item.customizations.filter(c => !c.isSauce).map((custom, idx) => {
+                                  if (custom.isDip) {
+                                    return <div key={idx} className="text-orange-600">• {custom.quantity || 1}x {custom.name} dip (+${((custom.price || DIP_PRICE) * (custom.quantity || 1)).toLocaleString('es-CL')})</div>;
+                                  }
+                                  return <div key={idx} className="text-blue-600">• {custom.quantity}x {custom.name} (+${(custom.price * custom.quantity).toLocaleString('es-CL')})</div>;
+                                })}
                               </div>
                             </div>
                           )}
