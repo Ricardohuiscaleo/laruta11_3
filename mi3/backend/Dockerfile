@@ -1,10 +1,10 @@
 FROM php:8.3-apache
 
 RUN apt-get update && apt-get install -y \
-    libpng-dev libjpeg-dev libfreetype6-dev \
+    libpng-dev libjpeg-dev libfreetype6-dev libwebp-dev \
     libzip-dev libonig-dev unzip git curl \
     supervisor \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install pdo_mysql mbstring gd zip bcmath pcntl \
     && a2enmod rewrite headers
 
