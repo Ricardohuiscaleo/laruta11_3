@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { apiFetch } from '@/lib/api';
 import { formatCLP, cn } from '@/lib/utils';
-import { Loader2, Plus, AlertTriangle, X, ChevronDown, ChevronRight, Image as ImageIcon, Search, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Loader2, Plus, AlertTriangle, X, ChevronDown, ChevronRight, Image as ImageIcon, Search, ToggleLeft, ToggleRight, Eye, EyeOff } from 'lucide-react';
 import BulkActionBar from '@/components/admin/BulkActionBar';
 import ImageQuickDrop from '@/components/admin/ImageQuickDrop';
 import type { ApiResponse } from '@/types';
@@ -150,6 +150,7 @@ export default function BebidasTab() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [animatingIds, setAnimatingIds] = useState<Set<number>>(new Set());
   const [flashIds, setFlashIds] = useState<Set<number>>(new Set());
+  const [showInactive, setShowInactive] = useState(false);
 
   const fetchBeverages = useCallback(async () => {
     setLoading(true);
@@ -257,9 +258,12 @@ export default function BebidasTab() {
     if (filterSubcategory) {
       result = result.filter(b => (b.subcategory_name || 'Sin subcategoría') === filterSubcategory);
     }
+    if (!showInactive) {
+      result = result.filter(b => b.is_active !== false);
+    }
     const q = search.toLowerCase();
     return q ? result.filter(b => b.name.toLowerCase().includes(q)) : result;
-  }, [beverages, search, filterSubcategory]);
+  }, [beverages, search, filterSubcategory, showInactive]);
 
   const grouped = filtered.reduce<Record<string, Beverage[]>>((acc, b) => {
     const key = b.subcategory_name || 'Sin subcategoría';
@@ -416,6 +420,20 @@ export default function BebidasTab() {
             <option key={name} value={name}>{name}</option>
           ))}
         </select>
+        <button
+          type="button"
+          onClick={() => setShowInactive(v => !v)}
+          className={cn(
+            'rounded-lg p-2.5 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center flex-shrink-0',
+            showInactive
+              ? 'bg-red-500 text-white'
+              : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
+          )}
+          aria-label={showInactive ? 'Ocultar inactivos' : 'Mostrar inactivos'}
+          title={showInactive ? 'Ocultar inactivos' : 'Mostrar inactivos'}
+        >
+          {showInactive ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </button>
         <button
           onClick={() => { setShowAddForm(!showAddForm); if (!showAddForm) { setForm(emptyForm); setFormErrors({}); setBevImage(null); } }}
           className={cn(

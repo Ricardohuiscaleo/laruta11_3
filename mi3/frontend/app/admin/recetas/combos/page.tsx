@@ -6,7 +6,7 @@ import { formatCLP, cn } from '@/lib/utils';
 import {
   Loader2, ArrowLeft, Plus, Trash2, Save, Search, X,
   Package, ChevronRight, CircleDot, ToggleLeft, ToggleRight,
-  Pencil, ImageIcon, Upload,
+  Pencil, ImageIcon, Upload, Eye, EyeOff,
 } from 'lucide-react';
 import BulkActionBar from '@/components/admin/BulkActionBar';
 import ImageQuickDrop from '@/components/admin/ImageQuickDrop';
@@ -118,6 +118,7 @@ export default function CombosPage() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [animatingIds, setAnimatingIds] = useState<Set<number>>(new Set());
   const [flashIds, setFlashIds] = useState<Set<number>>(new Set());
+  const [showInactive, setShowInactive] = useState(false);
 
   const fetchCombos = useCallback(async () => {    setLoading(true);
     setError('');
@@ -134,9 +135,13 @@ export default function CombosPage() {
   useEffect(() => { fetchCombos(); }, [fetchCombos]);
 
   const filteredCombos = useMemo(() => {
+    let result = combos;
+    if (!showInactive) {
+      result = result.filter(c => c.is_active !== false);
+    }
     const q = search.toLowerCase();
-    return q ? combos.filter(c => c.name.toLowerCase().includes(q)) : combos;
-  }, [combos, search]);
+    return q ? result.filter(c => c.name.toLowerCase().includes(q)) : result;
+  }, [combos, search, showInactive]);
 
   /* ─── Selection helpers ─── */
 
@@ -315,6 +320,20 @@ export default function CombosPage() {
             aria-label="Buscar combo"
           />
         </div>
+        <button
+          type="button"
+          onClick={() => setShowInactive(v => !v)}
+          className={cn(
+            'rounded-lg p-2.5 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center flex-shrink-0',
+            showInactive
+              ? 'bg-red-500 text-white'
+              : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
+          )}
+          aria-label={showInactive ? 'Ocultar inactivos' : 'Mostrar inactivos'}
+          title={showInactive ? 'Ocultar inactivos' : 'Mostrar inactivos'}
+        >
+          {showInactive ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </button>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
           className={cn(

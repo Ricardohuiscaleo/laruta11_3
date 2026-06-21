@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { apiFetch } from '@/lib/api';
 import { formatCLP, cn } from '@/lib/utils';
-import { Loader2, Plus, AlertTriangle, X, Image as ImageIcon, Search, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Loader2, Plus, AlertTriangle, X, Image as ImageIcon, Search, ToggleLeft, ToggleRight, Eye, EyeOff } from 'lucide-react';
 import ImageQuickDrop from '@/components/admin/ImageQuickDrop';
 import type { ApiResponse } from '@/types';
 
@@ -45,6 +45,7 @@ export default function ExtrasTab() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [dragOverRow, setDragOverRow] = useState<number | null>(null);
   const [flashIds, setFlashIds] = useState<Set<number>>(new Set());
+  const [showInactive, setShowInactive] = useState(false);
 
   const fetchExtras = useCallback(async () => {
     setLoading(true);
@@ -168,9 +169,10 @@ export default function ExtrasTab() {
     setSaving(false);
   };
 
-  const filtered = extras.filter(e =>
-    !search || e.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = extras.filter(e => {
+    if (!showInactive && e.is_active === false) return false;
+    return !search || e.name.toLowerCase().includes(search.toLowerCase());
+  });
 
   if (loading) {
     return <div className="flex items-center justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-red-500" /></div>;
@@ -184,17 +186,34 @@ export default function ExtrasTab() {
         </div>
       )}
 
-      <div className="flex items-center justify-between">
-        <div className="relative">
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
             type="text" value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Buscar extra..." className="w-64 rounded-lg border py-2 pl-9 pr-3 text-sm"
+            placeholder="Buscar extra..."
+            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-red-300 focus:outline-none focus:ring-1 focus:ring-red-300 min-h-[44px]"
+            aria-label="Buscar extra"
           />
         </div>
+        <button
+          type="button"
+          onClick={() => setShowInactive(v => !v)}
+          className={cn(
+            'rounded-lg p-2.5 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center flex-shrink-0',
+            showInactive
+              ? 'bg-red-500 text-white'
+              : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
+          )}
+          aria-label={showInactive ? 'Ocultar inactivos' : 'Mostrar inactivos'}
+          title={showInactive ? 'Ocultar inactivos' : 'Mostrar inactivos'}
+        >
+          {showInactive ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </button>
         <button onClick={() => { setShowAddForm(true); setEditingId(null); setForm(emptyForm); setFormErrors({}); }}
-          className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-2 text-sm text-white hover:bg-red-700">
-          <Plus className="h-4 w-4" />Nuevo Extra
+          className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors min-h-[44px] flex-shrink-0 bg-red-500 text-white hover:bg-red-600"
+          aria-label="Agregar extra">
+          <Plus className="h-4 w-4" /> Agregar Extra
         </button>
       </div>
 
