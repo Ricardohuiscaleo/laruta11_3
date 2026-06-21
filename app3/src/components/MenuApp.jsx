@@ -115,6 +115,10 @@ const ImageFullscreenModal = ({ product, total, onClose }) => {
 
 
 
+const SAUCE_EXTRA_PRICE = 300;
+const DIP_PRICE = 500;
+const FREE_SAUCES = 3;
+
 const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartTotal, onCheckout, onCustomizeProduct, statusData, nearbyTrucks = [], salsas = [], onUpdateCartItemSauces, comboItems, onUpdateComponentSauces, onUpdateItem }) => {
   const [shake, setShake] = useState(false);
   const [lastDeleted, setLastDeleted] = useState(null);
@@ -123,10 +127,6 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
   const [expandedItems, setExpandedItems] = useState(new Set());
 
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
-
-  const SAUCE_EXTRA_PRICE = 300;
-  const DIP_PRICE = 500;
-  const FREE_SAUCES = 3;
 
   const personalizarItems = comboItems?.personalizar || [];
 
