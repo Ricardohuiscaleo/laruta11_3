@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   PlusCircle, X, Star, MinusCircle, ZoomIn,
   Award, ChefHat, GlassWater, CupSoda, Droplets,
-  Eye, Heart, MessageSquare, Calendar, Bike, Caravan, ChevronDown, ChevronUp, Package,
+  Eye, Heart, MessageSquare, Calendar, Bike, Caravan, ChevronDown, ChevronUp, CheckSquare, Square, Package,
   Truck, TruckIcon, Navigation, MapPin, Clock, CheckCircle2, XCircle, CreditCard, Banknote, Smartphone, Percent, Tag, Pizza, Settings
 } from 'lucide-react';
 import OnboardingModal from './OnboardingModal.jsx';
@@ -972,6 +972,10 @@ const DELIVERY_CONFIG_DEFAULTS = {
   bracket_size_km: 2,
   rl6_discount_factor: 0.2857,
 };
+
+const SAUCE_EXTRA_PRICE = 300;
+const DIP_PRICE = 500;
+const FREE_SAUCES = 3;
 
 export default function App() {
   const cartIconRef = useRef(null);
@@ -1967,7 +1971,9 @@ export default function App() {
       comp.customizations.forEach(cust => {
         if (cust.isSauce) {
           sauceCount++;
-          if (sauceCount > 1) total += 500;
+          if (sauceCount > FREE_SAUCES) total += SAUCE_EXTRA_PRICE;
+        } else if (cust.isDip) {
+          total += DIP_PRICE * (cust.quantity || 1);
         } else {
           let price = cust.price * cust.quantity;
           if (cust.extraPrice && cust.quantity > 1) {
@@ -1989,7 +1995,10 @@ export default function App() {
         customizations: comp.customizations.map(c => {
           if (c.isSauce) {
             sauceCount++;
-            return { ...c, price: sauceCount === 1 ? 0 : 500 };
+            return { ...c, price: sauceCount <= FREE_SAUCES ? 0 : SAUCE_EXTRA_PRICE };
+          }
+          if (c.isDip) {
+            return { ...c, price: DIP_PRICE };
           }
           return c;
         })
@@ -3276,7 +3285,9 @@ export default function App() {
                           comp.customizations.forEach(cust => {
                             if (cust.isSauce) {
                               sauceCount++;
-                              if (sauceCount > 1) itemTotal += 500;
+                              if (sauceCount > FREE_SAUCES) itemTotal += SAUCE_EXTRA_PRICE;
+                            } else if (cust.isDip) {
+                              itemTotal += DIP_PRICE * (cust.quantity || 1);
                             } else {
                               itemTotal += (cust.price || 0) * (cust.quantity || 1);
                             }
@@ -3360,7 +3371,8 @@ export default function App() {
                           <div className="mt-1 text-xs">
                             {item.component_customizations.filter(c => c.customizations && c.customizations.length > 0).map((comp, ci) => {
                               const items = comp.customizations.map((cust, custIdx) => {
-                                if (cust.isSauce) return `${cust.name}${custIdx === 0 ? ' (1ra gratis)' : ' (+$500)'}`;
+                                if (cust.isSauce) return `${cust.name}${custIdx < FREE_SAUCES ? ` (${custIdx + 1}ra gratis)` : ` (+$${SAUCE_EXTRA_PRICE.toLocaleString('es-CL')})`}`;
+                                if (cust.isDip) return `${cust.quantity || 1}x ${cust.name} dip (+$${((DIP_PRICE) * (cust.quantity || 1)).toLocaleString('es-CL')})`;
                                 return `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`;
                               });
                               return <div key={ci} className="text-purple-700 font-medium">• {comp.label || comp.product_name || comp.name || 'Producto'}: {items.join(', ')}</div>;
@@ -3373,7 +3385,7 @@ export default function App() {
                             {item.component_customizations.map((comp, ci) => {
                               if (comp.no_salsas) return null;
                               const compSauces = (comp.customizations || []).filter(c => c.isSauce);
-                              const saucePrice = compSauces.length <= 1 ? 0 : (compSauces.length - 1) * 500;
+                              const saucePrice = getComponentCustomizationsPrice({ component_customizations: [comp] });
                               return (
                                 <div key={ci} className="bg-gray-50 rounded-md p-2">
                                   <div className="flex items-start gap-2 mb-1">
@@ -3388,10 +3400,16 @@ export default function App() {
                                         <span key={si} className="text-[10px] text-orange-600 font-medium">• {s.name}</span>
                                       ))}
                                       <span className="text-[10px] text-orange-500 font-medium ml-1">
-                                        {saucePrice === 0 ? '(1ra gratis)' : `(+$${saucePrice.toLocaleString('es-CL')})`}
+                                        {saucePrice === 0 ? `(${compSauces.length}/${FREE_SAUCES} gratis)` : `(+$${saucePrice.toLocaleString('es-CL')})`}
                                       </span>
                                     </div>
                                   )}
+                                  <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1 leading-snug">
+                                    salsas{' '}
+                                    <span className="text-[#e45b33] lowercase">
+                                      ({Math.min(FREE_SAUCES, compSauces.length)}/{FREE_SAUCES} gratis)
+                                    </span>
+                                  </h4>
                                   <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
                                     {[...(comboItems.salsas || [])].sort((a, b) => {
                                       const order = ['MAYO KRAFT', 'MAYO AJO', 'KETCHUP', 'MOSTAZA', 'MAYONESA DE AJO', 'CRAZY CHICKEN', 'BBQ'];
@@ -3407,7 +3425,7 @@ export default function App() {
                                           const newComps = [...item.component_customizations];
                                           const newComp = { ...newComps[ci] };
                                           const currentSauces = (newComp.customizations || []).filter(c => c.isSauce);
-                                          const otherCustoms = (newComp.customizations || []).filter(c => !c.isSauce);
+                                          const otherCustoms = (newComp.customizations || []).filter(c => !c.isSauce && !c.isDip);
                                           if (sel) {
                                             newComp.customizations = [...otherCustoms, ...currentSauces.filter(s => s.id !== salsa.id)];
                                           } else {
@@ -3416,7 +3434,7 @@ export default function App() {
                                           newComps[ci] = newComp;
                                           handleUpdateComponentSauces(item.cartItemId, rebuildSaucesForComponent(newComps));
                                         }}
-                                          className={`text-[10px] px-2 py-0.5 rounded-md border font-medium flex-shrink-0 ${sel ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-600 border-gray-300'}`}>
+                                          className={`text-[10px] px-2 py-0.5 rounded-md border font-medium flex-shrink-0 ${sel ? 'border-[#e45b33] bg-[#fff5f2] text-[#e45b33]' : 'bg-white text-gray-600 border-gray-300'}`}>
                                           {salsa.name}
                                         </button>
                                       );

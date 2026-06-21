@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import {
   PlusCircle, X, Star, ShoppingCart, MinusCircle, Minus, User, ZoomIn,
   Award, ChefHat, GlassWater, CupSoda, Droplets,
-  Eye, Heart, MessageSquare, Calendar, Search, Bike, Caravan, ChevronDown, ChevronUp,
+  Eye, Heart, MessageSquare, Calendar, Search, Bike, Caravan, ChevronDown, ChevronUp, CheckSquare, Square,
   Truck, TruckIcon, Navigation, MapPin, Clock, CheckCircle2, XCircle, Pizza, Pencil, Smartphone, Share2
 } from 'lucide-react';
 import { GiHamburger, GiHotDog, GiFrenchFries, GiMeat, GiSandwich, GiSteak } from 'react-icons/gi';
@@ -115,7 +115,7 @@ const ImageFullscreenModal = ({ product, total, onClose }) => {
 
 
 
-const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartTotal, onCheckout, onCustomizeProduct, statusData, nearbyTrucks = [], salsas = [], onUpdateCartItemSauces, comboItems, onUpdateComponentSauces }) => {
+const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartTotal, onCheckout, onCustomizeProduct, statusData, nearbyTrucks = [], salsas = [], onUpdateCartItemSauces, comboItems, onUpdateComponentSauces, onUpdateItem }) => {
   const [shake, setShake] = useState(false);
   const [lastDeleted, setLastDeleted] = useState(null);
   const [showUndo, setShowUndo] = useState(false);
@@ -124,7 +124,9 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
 
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  const SAUCE_PRICE = 500;
+  const SAUCE_EXTRA_PRICE = 300;
+  const DIP_PRICE = 500;
+  const FREE_SAUCES = 3;
 
   const personalizarItems = comboItems?.personalizar || [];
 
@@ -190,8 +192,8 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
 
   const getSaucePrice = (item) => {
     const itemSauces = getSaucesForItem(item);
-    if (itemSauces.length === 0) return 0;
-    return (itemSauces.length - 1) * SAUCE_PRICE;
+    if (itemSauces.length <= FREE_SAUCES) return 0;
+    return (itemSauces.length - FREE_SAUCES) * SAUCE_EXTRA_PRICE;
   };
 
   const getComponentSauces = (comboItem, componentIndex) => {
@@ -200,8 +202,8 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
   };
 
   const getComponentSaucePrice = (sauces) => {
-    if (!sauces || sauces.length <= 1) return 0;
-    return (sauces.length - 1) * SAUCE_PRICE;
+    if (!sauces || sauces.length <= FREE_SAUCES) return 0;
+    return (sauces.length - FREE_SAUCES) * SAUCE_EXTRA_PRICE;
   };
 
   const getComponentCustoms = (comboItem, componentIndex) => {
@@ -213,6 +215,17 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
     return getComponentSauces(comboItem, componentIndex).some(s => s.id === sauceId);
   };
 
+  const rebuildComponentSauces = (customs) => {
+    let sauceCount = 0;
+    return customs.map(c => {
+      if (c.isSauce) {
+        sauceCount++;
+        return { ...c, price: sauceCount <= FREE_SAUCES ? 0 : SAUCE_EXTRA_PRICE };
+      }
+      return c;
+    });
+  };
+
   const handleComponentSauceToggle = (comboItem, componentIndex, salsa) => {
     if (!comboItem.component_customizations) return;
     const components = [...comboItem.component_customizations];
@@ -220,11 +233,13 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
     const currentSauces = (comp.customizations || []).filter(c => c.isSauce);
     const otherCustoms = (comp.customizations || []).filter(c => !c.isSauce);
     
+    let updatedCustoms;
     if (currentSauces.some(s => s.id === salsa.id)) {
-      comp.customizations = [...otherCustoms, ...currentSauces.filter(s => s.id !== salsa.id)];
+      updatedCustoms = [...otherCustoms, ...currentSauces.filter(s => s.id !== salsa.id)];
     } else {
-      comp.customizations = [...otherCustoms, ...currentSauces, { ...salsa, quantity: 1, isSauce: true }];
+      updatedCustoms = [...otherCustoms, ...currentSauces, { ...salsa, quantity: 1, isSauce: true }];
     }
+    comp.customizations = rebuildComponentSauces(updatedCustoms);
     components[componentIndex] = comp;
     onUpdateComponentSauces(comboItem.cartItemId, components);
   };
@@ -303,7 +318,10 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
     return customizations.map(c => {
       if (c.isSauce) {
         sauceCount++;
-        return { ...c, price: sauceCount === 1 ? 0 : 500 };
+        return { ...c, price: sauceCount <= FREE_SAUCES ? 0 : SAUCE_EXTRA_PRICE };
+      }
+      if (c.isDip) {
+        return { ...c, price: DIP_PRICE };
       }
       return c;
     });
@@ -428,7 +446,7 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                                             </span>
                                           ))}
                                           <span className="text-[10px] text-orange-500 font-medium ml-1">
-                                            {getComponentSaucePrice(compSauces) === 0 ? '(1ra gratis)' : `(+$${getComponentSaucePrice(compSauces).toLocaleString('es-CL')})`}
+                                            {getComponentSaucePrice(compSauces) === 0 ? `(${compSauces.length}/${FREE_SAUCES} gratis)` : `(+$${getComponentSaucePrice(compSauces).toLocaleString('es-CL')})`}
                                           </span>
                                         </div>
                                       )}
@@ -462,23 +480,31 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                                         </div>
                                       )}
                                       {!comp.no_salsas && (
-                                      <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
-                                        {[...salsas].sort((a, b) => {
-                                          const order = ['MAYO KRAFT', 'MAYO AJO', 'KETCHUP', 'MOSTAZA', 'MAYONESA DE AJO', 'CRAZY CHICKEN', 'BBQ'];
-                                          const idxA = order.indexOf(a.name.toUpperCase());
-                                          const idxB = order.indexOf(b.name.toUpperCase());
-                                          if (idxA === -1 && idxB === -1) return a.name.localeCompare(b.name);
-                                          if (idxA === -1) return 1; if (idxB === -1) return -1;
-                                          return idxA - idxB;
-                                        }).map(salsa => {
-                                          const sel = isComponentSauceSelected(item, ci, salsa.id);
-                                          return (
-                                            <button key={salsa.id} onClick={() => handleComponentSauceToggle(item, ci, salsa)}
-                                              className={`text-[10px] px-2 py-0.5 rounded-md border font-medium flex-shrink-0 ${sel ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-600 border-gray-300'}`}>
-                                              {salsa.name}
-                                            </button>
-                                          );
-                                        })}
+                                      <div>
+                                        <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1 leading-snug">
+                                          salsas{' '}
+                                          <span className="text-[#e45b33] lowercase">
+                                            ({Math.min(FREE_SAUCES, (comp.customizations || []).filter(c => c.isSauce).length)}/{FREE_SAUCES} gratis)
+                                          </span>
+                                        </h4>
+                                        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+                                          {[...salsas].sort((a, b) => {
+                                            const order = ['MAYO KRAFT', 'MAYO AJO', 'KETCHUP', 'MOSTAZA', 'MAYONESA DE AJO', 'CRAZY CHICKEN', 'BBQ'];
+                                            const idxA = order.indexOf(a.name.toUpperCase());
+                                            const idxB = order.indexOf(b.name.toUpperCase());
+                                            if (idxA === -1 && idxB === -1) return a.name.localeCompare(b.name);
+                                            if (idxA === -1) return 1; if (idxB === -1) return -1;
+                                            return idxA - idxB;
+                                          }).map(salsa => {
+                                            const sel = isComponentSauceSelected(item, ci, salsa.id);
+                                            return (
+                                              <button key={salsa.id} onClick={() => handleComponentSauceToggle(item, ci, salsa)}
+                                                className={`text-[10px] px-2 py-0.5 rounded-md border font-medium flex-shrink-0 ${sel ? 'border-[#e45b33] bg-[#fff5f2] text-[#e45b33]' : 'bg-white text-gray-600 border-gray-300'}`}>
+                                                {salsa.name}
+                                              </button>
+                                            );
+                                          })}
+                                        </div>
                                       </div>
                                     )}
                                     </div>
@@ -520,7 +546,7 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                                 <p className="text-xs font-semibold text-orange-600 mb-1">SALSAS:</p>
                                 <div className="space-y-0.5 mb-1">
                                   {getSaucesForItem(item).map((sauce, idx) => (
-                                    <p key={idx} className="text-sm text-orange-600 font-medium">• {sauce.name} ({idx === 0 ? '1ra gratis' : `+$${SAUCE_PRICE.toLocaleString('es-CL')}`})</p>
+                                    <p key={idx} className="text-sm text-orange-600 font-medium">• {sauce.name} ({idx < FREE_SAUCES ? `${idx + 1}ra gratis` : `+$${SAUCE_EXTRA_PRICE.toLocaleString('es-CL')}`})</p>
                                   ))}
                                 </div>
                               </>
@@ -534,7 +560,7 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                                       <p key={idx} className="text-sm text-orange-600 font-medium ml-2">• {custom.quantity}x {custom.name} (+${(custom.price * custom.quantity).toLocaleString('es-CL')})</p>
                                     ))}
                                     {comp.customizations.filter(c => c.isSauce).map((sauce, si, arr) => (
-                                      <p key={si} className="text-sm text-orange-600 font-medium ml-2">• {sauce.name} ({si === 0 ? '1ra gratis' : `+$${SAUCE_PRICE.toLocaleString('es-CL')}`})</p>
+                                      <p key={si} className="text-sm text-orange-600 font-medium ml-2">• {sauce.name} ({si < FREE_SAUCES ? `${si + 1}ra gratis` : `+$${SAUCE_EXTRA_PRICE.toLocaleString('es-CL')}`})</p>
                                     ))}
                                   </div>
                                 ))}
@@ -544,55 +570,140 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                         ) : null}
                       </div>
                     ) : null}
-                    {/* Salsas - full width */}
+                    {/* Salsas - nuevo diseño mockup */}
                     {!isCombo && shouldShowPersonalizeButton && salsas.length > 0 && (
                       <div className="mt-2 pt-2 border-t border-gray-100">
-                        <p className="text-xs font-semibold text-gray-500 mb-1.5">AGREGAR SALSAS:</p>
-                        <div className="flex gap-2 overflow-x-auto whitespace-nowrap pb-2 scrollbar-thin">
+                        <h3 className="text-[13px] font-bold text-gray-500 uppercase tracking-wide mb-3 leading-snug">
+                          salsas que irán en tu producto{' '}
+                          <span className="text-[#e45b33] lowercase">
+                            ({Math.min(FREE_SAUCES, getSaucesForItem(item).length)}/{FREE_SAUCES} gratis)
+                          </span>
+                        </h3>
+                        <div className="flex overflow-x-auto gap-2 pb-3 scrollbar-thin">
                           {[...salsas].sort((a, b) => {
                             const order = ['MAYO KRAFT', 'MAYO AJO', 'KETCHUP', 'MOSTAZA', 'MAYONESA DE AJO', 'CRAZY CHICKEN', 'BBQ'];
                             const idxA = order.indexOf(a.name.toUpperCase());
                             const idxB = order.indexOf(b.name.toUpperCase());
                             if (idxA === -1 && idxB === -1) return a.name.localeCompare(b.name);
-                            if (idxA === -1) return 1;
-                            if (idxB === -1) return -1;
+                            if (idxA === -1) return 1; if (idxB === -1) return -1;
                             return idxA - idxB;
                           }).map(salsa => {
                             const selected = isSauceSelected(item, salsa.id);
-                            const selectedCount = selected ? getSaucesForItem(item).filter(s => s.id === salsa.id).length : 0;
                             return (
-                              <button
-                                key={salsa.id}
-                                onClick={() => {
-                                  const currentSauces = getSaucesForItem(item);
-                                  const otherCustomizations = (item.customizations || []).filter(c => !c.isSauce);
-                                  if (selected) {
-                                    const updated = currentSauces.filter(s => s.id !== salsa.id);
-                                    const rebuilt = rebuildSaucesForItem([...otherCustomizations, ...updated]);
-                                    onUpdateCartItemSauces(item.cartItemId, rebuilt);
-                                  } else {
-                                    const newSauce = { ...salsa, quantity: 1, isSauce: true };
-                                    const rebuilt = rebuildSaucesForItem([...otherCustomizations, ...currentSauces, newSauce]);
-                                    onUpdateCartItemSauces(item.cartItemId, rebuilt);
-                                  }
-                                }}
-                                className={`text-sm px-3 py-2 rounded-md border font-medium transition-all flex-shrink-0 ${
+                              <button key={salsa.id} onClick={() => {
+                                const currentSauces = getSaucesForItem(item);
+                                const otherCustomizations = (item.customizations || []).filter(c => !c.isSauce && !c.isDip);
+                                if (selected) {
+                                  const rebuilt = rebuildSaucesForItem([...otherCustomizations, ...currentSauces.filter(s => s.id !== salsa.id)]);
+                                  onUpdateCartItemSauces(item.cartItemId, rebuilt);
+                                } else {
+                                  const newSauce = { ...salsa, quantity: 1, isSauce: true };
+                                  const rebuilt = rebuildSaucesForItem([...otherCustomizations, ...currentSauces, newSauce]);
+                                  onUpdateCartItemSauces(item.cartItemId, rebuilt);
+                                }
+                              }}
+                                className={`flex-shrink-0 px-4 py-2 font-medium text-[15px] border rounded-lg whitespace-nowrap transition-all duration-200 ${
                                   selected
-                                    ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
-                                    : 'bg-white text-gray-600 border-gray-300 hover:border-orange-400 hover:text-orange-600'
-                                }`}
-                              >
+                                    ? 'border-[#e45b33] bg-[#fff5f2] text-[#e45b33] shadow-sm'
+                                    : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                                }`}>
                                 {salsa.name}
-                                {selected && selectedCount > 1 && <span className="ml-1 text-xs">×{selectedCount}</span>}
                               </button>
                             );
                           })}
-                          {getSaucesForItem(item).length > 0 && (
-                            <span className="text-xs text-orange-600 self-center ml-1 font-medium flex-shrink-0">
-                              {getSaucesForItem(item).length === 1 ? '1ra gratis' : `+$${((getSaucesForItem(item).length - 1) * SAUCE_PRICE).toLocaleString('es-CL')}`}
-                            </span>
-                          )}
                         </div>
+
+                        {/* Dip checkbox */}
+                        <label className="flex items-center cursor-pointer group px-1 py-2 rounded-lg hover:bg-gray-50 transition-all mt-1">
+                          <div className="relative flex items-center justify-center w-6 h-6 mr-3">
+                            <input type="checkbox" className="sr-only"
+                              checked={item._wantsDip || false}
+                              onChange={(e) => {
+                                onUpdateItem && onUpdateItem(item.cartItemId, { _wantsDip: e.target.checked });
+                                if (!e.target.checked) {
+                                  const otherCustomizations = (item.customizations || []).filter(c => !c.isDip);
+                                  onUpdateCartItemSauces(item.cartItemId, otherCustomizations.length > 0 ? otherCustomizations : null);
+                                }
+                              }} />
+                            {(item._wantsDip)
+                              ? <CheckSquare className="text-[#e45b33] w-6 h-6" />
+                              : <Square className="text-gray-300 w-6 h-6 group-hover:text-gray-400" strokeWidth={2.5} />
+                            }
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-bold text-gray-700 text-[15px] select-none">Agregar salsa en pocillo dip</span>
+                            <span className="text-xs text-gray-500 font-medium">Costo de ${DIP_PRICE.toLocaleString('es-CL')} por cada una</span>
+                          </div>
+                        </label>
+
+                        {/* Dip sauces (when enabled) */}
+                        {item._wantsDip && (
+                          <div className="mt-3 p-3 bg-[#fff5f2] rounded-xl border border-[#e45b33]/20">
+                            <h3 className="text-[13px] font-bold text-[#e45b33] uppercase tracking-wide mb-3">
+                              Salsas Dip Seleccionadas
+                            </h3>
+                            <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-thin">
+                              {[...salsas].sort((a, b) => {
+                                const order = ['MAYO KRAFT', 'MAYO AJO', 'KETCHUP', 'MOSTAZA', 'MAYONESA DE AJO', 'CRAZY CHICKEN', 'BBQ'];
+                                const idxA = order.indexOf(a.name.toUpperCase());
+                                const idxB = order.indexOf(b.name.toUpperCase());
+                                if (idxA === -1 && idxB === -1) return a.name.localeCompare(b.name);
+                                if (idxA === -1) return 1; if (idxB === -1) return -1;
+                                return idxA - idxB;
+                              }).map(salsa => {
+                                const dipItem = (item.customizations || []).find(c => c.isDip && c.id === salsa.id);
+                                const dipQty = dipItem ? dipItem.quantity : 0;
+                                return (
+                                  <div key={salsa.id}
+                                    className={`flex-shrink-0 flex items-center border rounded-lg whitespace-nowrap overflow-hidden transition-all duration-200 ${
+                                      dipQty > 0 ? 'border-[#e45b33] shadow-sm' : 'border-gray-300'
+                                    }`}>
+                                    {dipQty === 0 ? (
+                                      <button onClick={() => {
+                                        const currentCust = item.customizations || [];
+                                        const newDip = { ...salsa, quantity: 1, isDip: true };
+                                        const rebuilt = rebuildSaucesForItem([...currentCust, newDip]);
+                                        onUpdateCartItemSauces(item.cartItemId, rebuilt);
+                                      }}
+                                        className="px-4 py-2 text-gray-600 font-medium text-[15px] hover:bg-gray-50 transition-colors w-full h-full">
+                                        {salsa.name}
+                                      </button>
+                                    ) : (
+                                      <>
+                                        <span className="px-3 py-2 text-[#e45b33] bg-[#fff5f2] font-semibold text-[15px] border-r border-[#e45b33]/20">
+                                          {salsa.name}
+                                        </span>
+                                        <div className="flex items-center bg-white">
+                                          <button onClick={() => {
+                                            const currentCust = item.customizations || [];
+                                            const updated = currentCust.map(c =>
+                                              c.isDip && c.id === salsa.id && c.quantity > 1
+                                                ? { ...c, quantity: c.quantity - 1 }
+                                                : c
+                                            ).filter(c => !(c.isDip && c.id === salsa.id && c.quantity <= 1));
+                                            const rebuilt = rebuildSaucesForItem(updated);
+                                            onUpdateCartItemSauces(item.cartItemId, rebuilt.length > 0 ? rebuilt : null);
+                                          }}
+                                            className="px-3 py-2 text-[#e45b33] hover:bg-gray-50 text-lg leading-none font-medium touch-manipulation">−</button>
+                                          <span className="text-[15px] font-bold w-4 text-center text-gray-800">{dipQty}</span>
+                                          <button onClick={() => {
+                                            const currentCust = item.customizations || [];
+                                            const updated = currentCust.map(c =>
+                                              c.isDip && c.id === salsa.id ? { ...c, quantity: c.quantity + 1 } : c
+                                            );
+                                            const rebuilt = rebuildSaucesForItem(updated);
+                                            onUpdateCartItemSauces(item.cartItemId, rebuilt);
+                                          }}
+                                            className="px-3 py-2 text-[#e45b33] hover:bg-gray-50 text-lg leading-none font-medium touch-manipulation">+</button>
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                     {/* Expandable personalizar extras */}
@@ -2673,7 +2784,12 @@ export default function App() {
                           {/* Salsas selector (desktop mini cart) */}
                           {!isCombo && shouldShowPersonalizeButton && comboItems.salsas && comboItems.salsas.length > 0 && (
                             <div className="mt-2 pt-2 border-t border-gray-200">
-                              <p className="text-[10px] font-semibold text-gray-500 mb-1.5">SALSAS:</p>
+                              <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1.5">
+                                salsas que irán en tu producto{' '}
+                                <span className="text-[#e45b33] lowercase">
+                                  ({Math.min(FREE_SAUCES, (item.customizations || []).filter(c => c.isSauce).length)}/{FREE_SAUCES} gratis)
+                                </span>
+                              </h3>
                               <div className="flex flex-wrap gap-1.5">
                                 {comboItems.salsas.map(salsa => {
                                   const sauceCustoms = (item.customizations || []).filter(c => c.isSauce);
@@ -2682,23 +2798,21 @@ export default function App() {
                                     <button
                                       key={salsa.id}
                                       onClick={() => {
-                                        const currentSauces = sauceCustoms;
-                                        const otherCustomizations = (item.customizations || []).filter(c => !c.isSauce);
+                                        const otherCustomizations = (item.customizations || []).filter(c => !c.isSauce && !c.isDip);
                                         if (selected) {
-                                          const updated = currentSauces.filter(s => s.id !== salsa.id);
-                                          const rebuilt = currentSauces.length === 1 ? [] : currentSauces.filter(s => s.id !== salsa.id).map((s, i) => ({ ...s, price: i === 0 ? 0 : 500 }));
-                                          setCart(prev => prev.map(c => c.cartItemId === item.cartItemId ? { ...c, customizations: [...otherCustomizations, ...rebuilt].length > 0 ? [...otherCustomizations, ...rebuilt] : null } : c));
+                                          const updated = sauceCustoms.filter(s => s.id !== salsa.id);
+                                          const rebuilt = rebuildSaucesForItem([...otherCustomizations, ...updated]);
+                                          setCart(prev => prev.map(c => c.cartItemId === item.cartItemId ? { ...c, customizations: rebuilt.length > 0 ? rebuilt : null } : c));
                                         } else {
                                           const newSauce = { ...salsa, quantity: 1, isSauce: true };
-                                          const allSauces = [...currentSauces, newSauce];
-                                          const rebuilt = allSauces.map((s, i) => ({ ...s, price: i === 0 ? 0 : 500 }));
-                                          setCart(prev => prev.map(c => c.cartItemId === item.cartItemId ? { ...c, customizations: [...otherCustomizations, ...rebuilt] } : c));
+                                          const rebuilt = rebuildSaucesForItem([...otherCustomizations, ...sauceCustoms, newSauce]);
+                                          setCart(prev => prev.map(c => c.cartItemId === item.cartItemId ? { ...c, customizations: rebuilt } : c));
                                         }
                                       }}
                                       className={`text-[10px] px-2.5 py-1 rounded-md border font-medium transition-all ${
                                         selected
-                                          ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
-                                          : 'bg-white text-gray-600 border-gray-300 hover:border-orange-400 hover:text-orange-600'
+                                          ? 'border-[#e45b33] bg-[#fff5f2] text-[#e45b33] shadow-sm'
+                                          : 'bg-white text-gray-600 border-gray-300 hover:border-[#e45b33] hover:text-[#e45b33]'
                                       }`}
                                     >
                                       {salsa.name}
@@ -2706,6 +2820,28 @@ export default function App() {
                                   );
                                 })}
                               </div>
+                              {/* Dip checkbox (mini cart) */}
+                              <label className="flex items-center cursor-pointer group mt-2 px-1 py-1 rounded-lg hover:bg-gray-50 transition-all">
+                                <div className="relative flex items-center justify-center w-4 h-4 mr-2 flex-shrink-0">
+                                  <input type="checkbox" className="sr-only"
+                                    checked={item._wantsDip || false}
+                                    onChange={(e) => {
+                                      setCart(prev => prev.map(c => c.cartItemId === item.cartItemId ? { ...c, _wantsDip: e.target.checked } : c));
+                                      if (!e.target.checked) {
+                                        setCart(prev => prev.map(c => {
+                                          if (c.cartItemId !== item.cartItemId) return c;
+                                          const filtered = (c.customizations || []).filter(x => !x.isDip);
+                                          return { ...c, customizations: filtered.length > 0 ? filtered : null };
+                                        }));
+                                      }
+                                    }} />
+                                  {(item._wantsDip)
+                                    ? <CheckSquare className="text-[#e45b33] w-4 h-4" />
+                                    : <Square className="text-gray-300 w-4 h-4 group-hover:text-gray-400" strokeWidth={2.5} />
+                                  }
+                                </div>
+                                <span className="text-[10px] text-gray-600 font-medium select-none">Agregar salsa dip <span className="text-[#e45b33]">(${DIP_PRICE.toLocaleString('es-CL')} c/u)</span></span>
+                              </label>
                             </div>
                           )}
                         </div>
@@ -3129,6 +3265,13 @@ export default function App() {
             setCart(prevCart => prevCart.map(item =>
               item.cartItemId === cartItemId
                 ? { ...item, component_customizations: components }
+                : item
+            ));
+          }}
+          onUpdateItem={(cartItemId, fields) => {
+            setCart(prevCart => prevCart.map(item =>
+              item.cartItemId === cartItemId
+                ? { ...item, ...fields }
                 : item
             ));
           }}
