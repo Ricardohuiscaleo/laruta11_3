@@ -104,7 +104,7 @@ $sql = "SELECT $selectFields
         WHERE COALESCE(scheduled_time, created_at) >= ? 
         AND COALESCE(scheduled_time, created_at) < ?
         AND payment_status = 'paid'
-        AND order_number NOT LIKE 'RL6-%'
+        AND order_number NOT LIKE 'RL6-%' AND order_number NOT LIKE 'TRF-%'
         ORDER BY created_at DESC";
 
 $stmt = mysqli_prepare($conn, $sql);

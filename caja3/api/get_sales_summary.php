@@ -99,7 +99,7 @@ try {
             WHERE COALESCE(scheduled_time, created_at) >= ? 
             AND COALESCE(scheduled_time, created_at) < ?
             AND payment_status = 'paid'
-            AND order_number NOT LIKE 'RL6-%'
+            AND order_number NOT LIKE 'RL6-%' AND order_number NOT LIKE 'TRF-%'
             GROUP BY payment_method";
     
     $stmt = $pdo->prepare($sql);
@@ -137,7 +137,7 @@ try {
                     WHERE COALESCE(scheduled_time, created_at) >= ? 
                     AND COALESCE(scheduled_time, created_at) < ?
                     AND payment_status = 'paid'
-                    AND order_number NOT LIKE 'RL6-%'
+                    AND order_number NOT LIKE 'RL6-%' AND order_number NOT LIKE 'TRF-%'
                     AND delivery_fee > 0";
     
     $deliveryStmt = $pdo->prepare($deliverySql);
