@@ -3385,7 +3385,7 @@ export default function App() {
                             {item.component_customizations.map((comp, ci) => {
                               if (comp.no_salsas) return null;
                               const compSauces = (comp.customizations || []).filter(c => c.isSauce);
-                              const saucePrice = getComponentCustomizationsPrice({ component_customizations: [comp] });
+                              const saucePrice = compSauces.length <= FREE_SAUCES ? 0 : (compSauces.length - FREE_SAUCES) * SAUCE_EXTRA_PRICE;
                               return (
                                 <div key={ci} className="bg-gray-50 rounded-md p-2">
                                   <div className="flex items-start gap-2 mb-1">
@@ -3406,7 +3406,7 @@ export default function App() {
                                   )}
                                   <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1 leading-snug">
                                     salsas{' '}
-                                    <span className="text-[#e45b33] lowercase">
+                                    <span className="text-orange-500 lowercase">
                                       ({Math.min(FREE_SAUCES, compSauces.length)}/{FREE_SAUCES} gratis)
                                     </span>
                                   </h4>
@@ -3425,16 +3425,17 @@ export default function App() {
                                           const newComps = [...item.component_customizations];
                                           const newComp = { ...newComps[ci] };
                                           const currentSauces = (newComp.customizations || []).filter(c => c.isSauce);
+                                          const dips = (newComp.customizations || []).filter(c => c.isDip);
                                           const otherCustoms = (newComp.customizations || []).filter(c => !c.isSauce && !c.isDip);
                                           if (sel) {
-                                            newComp.customizations = [...otherCustoms, ...currentSauces.filter(s => s.id !== salsa.id)];
+                                            newComp.customizations = [...otherCustoms, ...dips, ...currentSauces.filter(s => s.id !== salsa.id)];
                                           } else {
-                                            newComp.customizations = [...otherCustoms, ...currentSauces, { ...salsa, quantity: 1, isSauce: true }];
+                                            newComp.customizations = [...otherCustoms, ...dips, ...currentSauces, { ...salsa, quantity: 1, isSauce: true }];
                                           }
                                           newComps[ci] = newComp;
                                           handleUpdateComponentSauces(item.cartItemId, rebuildSaucesForComponent(newComps));
                                         }}
-                                          className={`text-[10px] px-2 py-0.5 rounded-md border font-medium flex-shrink-0 ${sel ? 'border-[#e45b33] bg-[#fff5f2] text-[#e45b33]' : 'bg-white text-gray-600 border-gray-300'}`}>
+                                          className={`text-[10px] px-2 py-0.5 rounded-md border font-medium flex-shrink-0 ${sel ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-600 border-gray-300'}`}>
                                           {salsa.name}
                                         </button>
                                       );

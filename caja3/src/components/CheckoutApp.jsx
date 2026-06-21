@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, ShoppingCart, User, MapPin, CreditCard, Bike, Caravan } from 'lucide-react';
 import { vibrate, playSuccessSound } from '../utils/effects.js';
+
+const SAUCE_EXTRA_PRICE = 300;
+const DIP_PRICE = 500;
+const FREE_SAUCES = 3;
 import TUUPaymentIntegration from './TUUPaymentIntegration.jsx';
 import TUUPaymentFrame from './TUUPaymentFrame.jsx';
 import AddressAutocomplete from './AddressAutocomplete.jsx';
@@ -560,15 +564,17 @@ const CheckoutApp = () => {
             }
 
             if (item.component_customizations) {
-              item.component_customizations.forEach(comp => {
-                (comp.customizations || []).forEach((cust, custIdx) => {
-                  if (cust.isSauce) {
-                    itemTotal += custIdx === 0 ? 0 : 500;
-                  } else {
-                    itemTotal += (cust.price || 0) * (cust.quantity || 1);
-                  }
+                item.component_customizations.forEach(comp => {
+                  (comp.customizations || []).forEach((cust, custIdx) => {
+                    if (cust.isSauce) {
+                      itemTotal += custIdx < FREE_SAUCES ? 0 : SAUCE_EXTRA_PRICE;
+                    } else if (cust.isDip) {
+                      itemTotal += DIP_PRICE * (cust.quantity || 1);
+                    } else {
+                      itemTotal += (cust.price || 0) * (cust.quantity || 1);
+                    }
+                  });
                 });
-              });
             }
 
             whatsappMessage += `${index + 1}. ${item.name} x${item.quantity} - $${itemTotal.toLocaleString('es-CL')}\n`;
@@ -608,7 +614,8 @@ const CheckoutApp = () => {
               item.component_customizations.forEach(comp => {
                 if (comp.customizations && comp.customizations.length > 0) {
                   const parts = comp.customizations.map((cust, custIdx) => {
-                    if (cust.isSauce) return `${cust.name}${custIdx === 0 ? ' (1ra gratis)' : ' (+$500)'}`;
+                    if (cust.isSauce) return `${cust.name}${(() => { let sc = 0; for (let i = 0; i < custIdx; i++) if (comp.customizations[i].isSauce) sc++; return sc < FREE_SAUCES ? '' : ` (+$${SAUCE_EXTRA_PRICE.toLocaleString('es-CL')})`; })()}`;
+                    if (cust.isDip) return `${cust.quantity || 1}x ${cust.name} dip (+$${((cust.price || DIP_PRICE) * (cust.quantity || 1)).toLocaleString('es-CL')})`;
                     return `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`;
                   });
                   whatsappMessage += `   🎯 ${comp.label || comp.product_name || comp.name || 'Producto'}: ${parts.join(', ')}\n`;
@@ -950,7 +957,9 @@ const CheckoutApp = () => {
                     item.component_customizations.forEach(comp => {
                       (comp.customizations || []).forEach((cust, custIdx) => {
                         if (cust.isSauce) {
-                          itemTotal += custIdx === 0 ? 0 : 500;
+                          itemTotal += custIdx < FREE_SAUCES ? 0 : SAUCE_EXTRA_PRICE;
+                        } else if (cust.isDip) {
+                          itemTotal += DIP_PRICE * (cust.quantity || 1);
                         } else {
                           itemTotal += (cust.price || 0) * (cust.quantity || 1);
                         }
@@ -968,11 +977,15 @@ const CheckoutApp = () => {
                           {item.customizations && item.customizations.length > 0 && (
                             <div className="mt-1 text-xs">
                               <span className="font-medium text-gray-700">Incluye:</span>
-                              {item.customizations.map((custom, idx) => (
-                                <div key={idx} className="text-blue-600">
-                                  • {custom.quantity}x {custom.name} (+\${((custom.price || 0) * (custom.quantity || 0)).toLocaleString('es-CL')})
-                                </div>
-                              ))}
+                              {item.customizations.map((custom, idx) => {
+                                if (custom.isSauce) {
+                                  return <div key={idx} className="text-orange-600">• {custom.name}{custom.price > 0 ? ` (+$${custom.price.toLocaleString('es-CL')})` : ''}</div>;
+                                }
+                                if (custom.isDip) {
+                                  return <div key={idx} className="text-orange-600">• {custom.quantity || 1}x {custom.name} dip (+$${((custom.price || DIP_PRICE) * (custom.quantity || 1)).toLocaleString('es-CL')})</div>;
+                                }
+                                return <div key={idx} className="text-blue-600">• {custom.quantity}x {custom.name} (+$${((custom.price || 0) * (custom.quantity || 0)).toLocaleString('es-CL')})</div>;
+                              })}
                             </div>
                           )}
 
@@ -1002,8 +1015,10 @@ const CheckoutApp = () => {
                                 <div key={ci} className="text-purple-700 font-medium">
                                   • {comp.label || comp.product_name || comp.name || 'Producto'}: {comp.customizations.map((cust, custIdx) =>
                                     cust.isSauce
-                                      ? `${cust.name}${custIdx === 0 ? ' (1ra gratis)' : ' (+$500)'}`
-                                      : `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`
+                                      ? `${cust.name}${(() => { let sc = 0; for (let i = 0; i < custIdx; i++) if (comp.customizations[i].isSauce) sc++; return sc < FREE_SAUCES ? '' : ` (+$${SAUCE_EXTRA_PRICE.toLocaleString('es-CL')})`; })()}`
+                                      : cust.isDip
+                                        ? `${cust.quantity || 1}x ${cust.name} dip (+$${((cust.price || DIP_PRICE) * (cust.quantity || 1)).toLocaleString('es-CL')})`
+                                        : `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`
                                   ).join(', ')}
                                 </div>
                               ))}

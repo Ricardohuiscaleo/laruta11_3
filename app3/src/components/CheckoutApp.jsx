@@ -9,6 +9,10 @@ import ReviewsModal from './ReviewsModal.jsx';
 import AddressAutocomplete from './AddressAutocomplete.jsx';
 import { isWithinBusinessHours, getBusinessStatus } from '../utils/businessHours.js';
 
+const SAUCE_EXTRA_PRICE = 300;
+const DIP_PRICE = 500;
+const FREE_SAUCES = 3;
+
 const CheckoutApp = ({ onClose }) => {
   const [cart, setCart] = useState([]);
   const [cartTotal, setCartTotal] = useState(0);
@@ -1512,14 +1516,18 @@ const CheckoutApp = ({ onClose }) => {
                                   }
                                 })}
                               </div>
-                              {item.customizations && item.customizations.filter(c => !c.isSauce).length > 0 && (
+                              {item.customizations && item.customizations.length > 0 && (
                                 <div className="text-orange-600">
                                   <span className="font-semibold">Además está personalizado con: </span>
-                                  {item.customizations.filter(c => !c.isSauce).map((custom, idx) => (
-                                    <span key={idx}>
-                                      {custom.quantity}x {custom.name} (+${(custom.price * custom.quantity).toLocaleString('es-CL')}){idx < item.customizations.filter(c => !c.isSauce).length - 1 ? ', ' : ''}
-                                    </span>
-                                  ))}
+                                  {item.customizations.map((custom, idx) => {
+                                    if (custom.isSauce) {
+                                      return <span key={idx}>{custom.name}{custom.price > 0 ? ` (+$${custom.price.toLocaleString('es-CL')})` : ''}{idx < item.customizations.length - 1 ? ', ' : ''}</span>;
+                                    }
+                                    if (custom.isDip) {
+                                      return <span key={idx}>{custom.quantity || 1}x {custom.name} dip (+$${((custom.price || DIP_PRICE) * (custom.quantity || 1)).toLocaleString('es-CL')}){idx < item.customizations.length - 1 ? ', ' : ''}</span>;
+                                    }
+                                    return <span key={idx}>{custom.quantity}x {custom.name} (+$${(custom.price * custom.quantity).toLocaleString('es-CL')}){idx < item.customizations.length - 1 ? ', ' : ''}</span>;
+                                  })}
                                 </div>
                               )}
                               {isCombo && item.component_customizations && item.component_customizations.some(c => c.customizations && c.customizations.length > 0) && (
@@ -1529,7 +1537,7 @@ const CheckoutApp = ({ onClose }) => {
                                       <span className="font-semibold">{comp.label}: </span>
                                       {comp.customizations.map((custom, idx) => (
                                         <span key={idx}>
-                                          {custom.isSauce ? custom.name : `${custom.quantity}x ${custom.name}`}{custom.isSauce ? (idx === 0 ? ' (1ra gratis)' : ` (+$500)`) : ` (+$${(custom.price * custom.quantity).toLocaleString('es-CL')})`}{idx < comp.customizations.length - 1 ? ', ' : ''}
+                                          {custom.isSauce ? custom.name : `${custom.quantity}x ${custom.name}`}{custom.isSauce ? (() => { let sc = 0; for (let i = 0; i < idx; i++) if (comp.customizations[i].isSauce) sc++; return sc < FREE_SAUCES ? '' : ` (+$${SAUCE_EXTRA_PRICE.toLocaleString('es-CL')})`; })() : custom.isDip ? ` dip (+$${((custom.price || DIP_PRICE) * (custom.quantity || 1)).toLocaleString('es-CL')})` : ` (+$${(custom.price * custom.quantity).toLocaleString('es-CL')})`}{idx < comp.customizations.length - 1 ? ', ' : ''}
                                         </span>
                                       ))}
                                     </div>
@@ -1538,14 +1546,18 @@ const CheckoutApp = ({ onClose }) => {
                               )}
                             </div>
                           )}
-                          {!isCombo && item.customizations && item.customizations.filter(c => !c.isSauce).length > 0 && (
+                          {!isCombo && item.customizations && item.customizations.length > 0 && (
                             <div className="mt-1 text-xs text-orange-600">
                               <span className="font-semibold">Personalizado con: </span>
-                              {item.customizations.filter(c => !c.isSauce).map((custom, idx) => (
-                                <span key={idx}>
-                                  {custom.quantity}x {custom.name} (+${(custom.price * custom.quantity).toLocaleString('es-CL')}){idx < item.customizations.filter(c => !c.isSauce).length - 1 ? ', ' : ''}
-                                </span>
-                              ))}
+                              {item.customizations.map((custom, idx) => {
+                                if (custom.isSauce) {
+                                  return <span key={idx}>{custom.name}{custom.price > 0 ? ` (+$${custom.price.toLocaleString('es-CL')})` : ''}{idx < item.customizations.length - 1 ? ', ' : ''}</span>;
+                                }
+                                if (custom.isDip) {
+                                  return <span key={idx}>{custom.quantity || 1}x {custom.name} dip (+$${((custom.price || DIP_PRICE) * (custom.quantity || 1)).toLocaleString('es-CL')}){idx < item.customizations.length - 1 ? ', ' : ''}</span>;
+                                }
+                                return <span key={idx}>{custom.quantity}x {custom.name} (+$${(custom.price * custom.quantity).toLocaleString('es-CL')}){idx < item.customizations.length - 1 ? ', ' : ''}</span>;
+                              })}
                             </div>
                           )}
                         </div>

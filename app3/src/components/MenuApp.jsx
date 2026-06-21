@@ -592,13 +592,16 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                             return (
                               <button key={salsa.id} onClick={() => {
                                 const currentSauces = getSaucesForItem(item);
+                                const dips = (item.customizations || []).filter(c => c.isDip);
+                                const dips = (item.customizations || []).filter(c => c.isDip);
+                                const dips = (item.customizations || []).filter(c => c.isDip);
                                 const otherCustomizations = (item.customizations || []).filter(c => !c.isSauce && !c.isDip);
                                 if (selected) {
-                                  const rebuilt = rebuildSaucesForItem([...otherCustomizations, ...currentSauces.filter(s => s.id !== salsa.id)]);
+                                  const rebuilt = rebuildSaucesForItem([...otherCustomizations, ...dips, ...currentSauces.filter(s => s.id !== salsa.id)]);
                                   onUpdateCartItemSauces(item.cartItemId, rebuilt);
                                 } else {
                                   const newSauce = { ...salsa, quantity: 1, isSauce: true };
-                                  const rebuilt = rebuildSaucesForItem([...otherCustomizations, ...currentSauces, newSauce]);
+                                  const rebuilt = rebuildSaucesForItem([...otherCustomizations, ...dips, ...currentSauces, newSauce]);
                                   onUpdateCartItemSauces(item.cartItemId, rebuilt);
                                 }
                               }}
@@ -2798,14 +2801,15 @@ export default function App() {
                                     <button
                                       key={salsa.id}
                                       onClick={() => {
+                                        const dips = (item.customizations || []).filter(c => c.isDip);
                                         const otherCustomizations = (item.customizations || []).filter(c => !c.isSauce && !c.isDip);
                                         if (selected) {
                                           const updated = sauceCustoms.filter(s => s.id !== salsa.id);
-                                          const rebuilt = rebuildSaucesForItem([...otherCustomizations, ...updated]);
+                                          const rebuilt = rebuildSaucesForItem([...otherCustomizations, ...dips, ...updated]);
                                           setCart(prev => prev.map(c => c.cartItemId === item.cartItemId ? { ...c, customizations: rebuilt.length > 0 ? rebuilt : null } : c));
                                         } else {
                                           const newSauce = { ...salsa, quantity: 1, isSauce: true };
-                                          const rebuilt = rebuildSaucesForItem([...otherCustomizations, ...sauceCustoms, newSauce]);
+                                          const rebuilt = rebuildSaucesForItem([...otherCustomizations, ...dips, ...sauceCustoms, newSauce]);
                                           setCart(prev => prev.map(c => c.cartItemId === item.cartItemId ? { ...c, customizations: rebuilt } : c));
                                         }
                                       }}
