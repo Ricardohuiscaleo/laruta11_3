@@ -660,6 +660,17 @@ const ProfileModalModern = ({
                 </Card>
               ) : rl6Credit ? (
                 <>
+                  {rl6Credit.credit?.credito_bloqueado == 1 && (
+                    <Card className="p-4 bg-red-900/30 border-red-600">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">🚫</span>
+                        <div>
+                          <p className="font-bold text-red-300">Cuenta Bloqueada</p>
+                          <p className="text-sm text-red-400">Su cuenta ha sido bloqueada, contactar al administrador para desbloquear.</p>
+                        </div>
+                      </div>
+                    </Card>
+                  )}
                   {/* Crédito Disponible */}
                   <Card className="p-6 bg-gradient-to-br from-amber-900/30 to-amber-800/30 border-amber-600">
                     <div className="text-center">
@@ -828,8 +839,8 @@ const ProfileModalModern = ({
                       <div className="flex items-center gap-3">
                         <span className="text-2xl">🚫</span>
                         <div>
-                          <p className="font-bold text-red-300">Crédito Bloqueado</p>
-                          <p className="text-sm text-red-400">Tu crédito está bloqueado por falta de pago. Paga tu saldo pendiente para reactivarlo.</p>
+                          <p className="font-bold text-red-300">Cuenta Bloqueada</p>
+                          <p className="text-sm text-red-400">Su cuenta ha sido bloqueada, contactar al administrador para desbloquear.</p>
                         </div>
                       </div>
                     </Card>

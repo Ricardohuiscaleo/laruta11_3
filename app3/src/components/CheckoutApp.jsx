@@ -89,9 +89,10 @@ const CheckoutApp = ({ onClose }) => {
   };
   const [deliveryConfig, setDeliveryConfig] = useState(DELIVERY_CONFIG_DEFAULTS);
 
-  // Verificar si es militar RL6 aprobado (loose equality para manejar strings y numbers)
+  // Verificar si es militar RL6 aprobado y no bloqueado (loose equality para manejar strings y numbers)
   const isMilitarRL6 = (user?.es_militar_rl6 == 1 || user?.es_militar_rl6 === '1') &&
-    (user?.credito_aprobado == 1 || user?.credito_aprobado === '1');
+    (user?.credito_aprobado == 1 || user?.credito_aprobado === '1') &&
+    (user?.credito_bloqueado == 0 || user?.credito_bloqueado === '0' || !user?.credito_bloqueado);
 
   // Verificar si es beneficiario R11 aprobado y no bloqueado
   const isR11Credit = (user?.es_credito_r11 == 1 || user?.es_credito_r11 === '1') &&

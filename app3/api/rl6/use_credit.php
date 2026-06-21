@@ -78,7 +78,7 @@ if (!$user || !$user['es_militar_rl6'] || !$user['credito_aprobado']) {
 
 // Validar que el crédito no esté bloqueado
 if (!empty($user['credito_bloqueado'])) {
-    echo json_encode(['success' => false, 'error' => 'Tu crédito está bloqueado por falta de pago. Por favor paga tu saldo pendiente.']);
+    echo json_encode(['success' => false, 'error' => 'Su cuenta ha sido bloqueada, contactar al administrador para desbloquear']);
     exit;
 }
 

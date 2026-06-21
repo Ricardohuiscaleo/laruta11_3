@@ -40,6 +40,7 @@ $stmt = $conn->prepare("
     SELECT 
         es_militar_rl6,
         credito_aprobado,
+        credito_bloqueado,
         limite_credito,
         credito_usado,
         grado_militar,
@@ -97,6 +98,7 @@ echo json_encode([
         'limite_credito' => floatval($user['limite_credito']),
         'credito_usado' => floatval($user['credito_usado']),
         'credito_disponible' => floatval($credito_disponible),
+        'credito_bloqueado' => intval($user['credito_bloqueado']),
         'grado_militar' => $user['grado_militar'],
         'unidad_trabajo' => $user['unidad_trabajo'],
         'fecha_aprobacion' => $user['fecha_aprobacion_rl6']
