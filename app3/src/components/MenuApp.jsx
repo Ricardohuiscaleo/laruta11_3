@@ -593,8 +593,6 @@ const CartModal = ({ isOpen, onClose, cart, onAddToCart, onRemoveFromCart, cartT
                               <button key={salsa.id} onClick={() => {
                                 const currentSauces = getSaucesForItem(item);
                                 const dips = (item.customizations || []).filter(c => c.isDip);
-                                const dips = (item.customizations || []).filter(c => c.isDip);
-                                const dips = (item.customizations || []).filter(c => c.isDip);
                                 const otherCustomizations = (item.customizations || []).filter(c => !c.isSauce && !c.isDip);
                                 if (selected) {
                                   const rebuilt = rebuildSaucesForItem([...otherCustomizations, ...dips, ...currentSauces.filter(s => s.id !== salsa.id)]);
