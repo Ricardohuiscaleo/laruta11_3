@@ -2018,6 +2018,33 @@ export default function App() {
     ));
   };
 
+  const getSaucesForItem = (item) => {
+    if (!item.customizations) return [];
+    return item.customizations.filter(c => c.isSauce);
+  };
+
+  const rebuildSaucesForItem = (customizations) => {
+    let sauceCount = 0;
+    return customizations.map(c => {
+      if (c.isSauce) {
+        sauceCount++;
+        return { ...c, price: sauceCount <= FREE_SAUCES ? 0 : SAUCE_EXTRA_PRICE };
+      }
+      if (c.isDip) {
+        return { ...c, price: DIP_PRICE };
+      }
+      return c;
+    });
+  };
+
+  const handleUpdateCartItemSauces = (cartItemId, customizations) => {
+    setCart(prevCart => prevCart.map(item =>
+      item.cartItemId === cartItemId
+        ? { ...item, customizations: customizations && customizations.length > 0 ? customizations : null }
+        : item
+    ));
+  };
+
   const cartSubtotal = useMemo(() => {
     return cart.reduce((total, item) => {
       let itemPrice = item.price;
@@ -3385,6 +3412,100 @@ export default function App() {
                               });
                               return <div key={ci} className="text-purple-700 font-medium">• {comp.label || comp.product_name || comp.name || 'Producto'}: {items.join(', ')}</div>;
                             })}
+                          </div>
+                        )}
+                        
+                        {!isCombo && (() => { const nonPersCats = ['Bebidas', 'Jugos', 'Té', 'Café', 'Salsas']; return !nonPersCats.includes(item.subcategory_name); })() && comboItems.salsas && comboItems.salsas.length > 0 && (
+                          <div className="mt-2 pt-2 border-t border-gray-200">
+                            <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wide mb-1.5">
+                              salsas que irán en tu producto{' '}
+                              <span className="text-orange-500 lowercase">
+                                ({Math.min(FREE_SAUCES, (item.customizations || []).filter(c => c.isSauce).length)}/{FREE_SAUCES} gratis)
+                              </span>
+                            </h4>
+                            <div className="flex flex-wrap gap-1.5">
+                              {[...(comboItems.salsas || [])].sort((a, b) => {
+                                const order = ['MAYO KRAFT', 'MAYO AJO', 'KETCHUP', 'MOSTAZA', 'MAYONESA DE AJO', 'CRAZY CHICKEN', 'BBQ'];
+                                const idxA = order.indexOf(a.name.toUpperCase());
+                                const idxB = order.indexOf(b.name.toUpperCase());
+                                if (idxA === -1 && idxB === -1) return a.name.localeCompare(b.name);
+                                if (idxA === -1) return 1; if (idxB === -1) return -1;
+                                return idxA - idxB;
+                              }).map(salsa => {
+                                const sel = (item.customizations || []).some(c => c.isSauce && c.id === salsa.id);
+                                return (
+                                  <button key={salsa.id} onClick={() => {
+                                    const currentSauces = (item.customizations || []).filter(c => c.isSauce);
+                                    const dips = (item.customizations || []).filter(c => c.isDip);
+                                    const otherCustoms = (item.customizations || []).filter(c => !c.isSauce && !c.isDip);
+                                    if (sel) {
+                                      const rebuilt = rebuildSaucesForItem([...otherCustoms, ...dips, ...currentSauces.filter(s => s.id !== salsa.id)]);
+                                      handleUpdateCartItemSauces(item.cartItemId, rebuilt);
+                                    } else {
+                                      const rebuilt = rebuildSaucesForItem([...otherCustoms, ...dips, ...currentSauces, { ...salsa, quantity: 1, isSauce: true }]);
+                                      handleUpdateCartItemSauces(item.cartItemId, rebuilt);
+                                    }
+                                  }}
+                                    className={`text-[10px] px-2 py-0.5 rounded-md border font-medium flex-shrink-0 ${sel ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-600 border-gray-300'}`}>
+                                    {salsa.name}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            <label className="flex items-center cursor-pointer group mt-2 px-1 py-1 rounded-lg hover:bg-gray-50 transition-all">
+                              <div className="relative flex items-center justify-center w-4 h-4 mr-2 flex-shrink-0">
+                                <input type="checkbox" className="sr-only"
+                                  checked={item._wantsDip || false}
+                                  onChange={(e) => {
+                                    handleUpdateCartItemSauces(item.cartItemId, null);
+                                    setCart(prev => prev.map(c => c.cartItemId === item.cartItemId ? { ...c, _wantsDip: e.target.checked } : c));
+                                    if (!e.target.checked) {
+                                      setCart(prev => prev.map(c => {
+                                        if (c.cartItemId !== item.cartItemId) return c;
+                                        const filtered = (c.customizations || []).filter(x => !x.isDip);
+                                        return { ...c, customizations: filtered.length > 0 ? filtered : null };
+                                      }));
+                                    }
+                                  }} />
+                                <svg viewBox="0 0 24 24" className={`w-4 h-4 transition-all ${item._wantsDip ? 'text-orange-500' : 'text-gray-300 group-hover:text-gray-400'}`} fill="none" stroke="currentColor" strokeWidth="2.5">
+                                  {item._wantsDip ? <><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 12l2 2 4-4" /></> : <rect x="3" y="3" width="18" height="18" rx="2" />}
+                                </svg>
+                              </div>
+                              <span className="text-[10px] text-gray-700 font-medium select-none">Agregar salsa en pocillo dip <span className="text-orange-500">(+${DIP_PRICE.toLocaleString('es-CL')})</span></span>
+                            </label>
+                            {item._wantsDip && (
+                              <div className="mt-1 flex flex-wrap gap-1.5">
+                                {[...(comboItems.salsas || [])].sort((a, b) => {
+                                  const order = ['MAYO KRAFT', 'MAYO AJO', 'KETCHUP', 'MOSTAZA', 'MAYONESA DE AJO', 'CRAZY CHICKEN', 'BBQ'];
+                                  const idxA = order.indexOf(a.name.toUpperCase());
+                                  const idxB = order.indexOf(b.name.toUpperCase());
+                                  if (idxA === -1 && idxB === -1) return a.name.localeCompare(b.name);
+                                  if (idxA === -1) return 1; if (idxB === -1) return -1;
+                                  return idxA - idxB;
+                                }).map(salsa => {
+                                  const dipItem = (item.customizations || []).find(c => c.isDip && c.id === salsa.id);
+                                  return (
+                                    <div key={salsa.id} className="flex items-center gap-0.5">
+                                      <button onClick={() => {
+                                        const currentCust = item.customizations || [];
+                                        const otherCustoms = currentCust.filter(c => !c.isDip);
+                                        if (!dipItem) {
+                                          const rebuilt = rebuildSaucesForItem([...otherCustoms, { ...salsa, quantity: 1, isDip: true }]);
+                                          handleUpdateCartItemSauces(item.cartItemId, rebuilt);
+                                        } else {
+                                          const updated = currentCust.map(c => c.isDip && c.id === salsa.id && c.quantity < 5 ? { ...c, quantity: c.quantity + 1 } : c);
+                                          const rebuilt = rebuildSaucesForItem(dipItem.quantity >= 5 ? currentCust.filter(c => !(c.isDip && c.id === salsa.id)) : updated);
+                                          handleUpdateCartItemSauces(item.cartItemId, rebuilt);
+                                        }
+                                      }}
+                                        className={`text-[10px] px-1.5 py-0.5 rounded-md border font-medium flex-shrink-0 ${dipItem ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-600 border-gray-300'}`}>
+                                        {salsa.name}{dipItem ? ` ${dipItem.quantity}` : ''}
+                                      </button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
                           </div>
                         )}
                         
