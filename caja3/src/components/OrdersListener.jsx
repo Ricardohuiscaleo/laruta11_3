@@ -8,7 +8,7 @@ const OrdersListener = ({ onOrdersUpdate }) => {
         const data = await response.json();
         if (data.success) {
           const allOrders = data.orders || [];
-          const activeCount = allOrders.filter(o => o.order_status !== 'delivered' && o.order_status !== 'cancelled').length;
+          const activeCount = allOrders.filter(o => o.order_status !== 'delivered' && o.order_status !== 'cancelled' && !o.order_number.startsWith('TRF-')).length;
           if (onOrdersUpdate) {
             onOrdersUpdate(activeCount);
           }
