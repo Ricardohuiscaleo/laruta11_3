@@ -75,15 +75,37 @@ try {
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$new_status, $payment_status, $transaction_id, $order_reference]);
     
-    // Si el pago fue exitoso, enviar notificación
+    // Si el pago fue exitoso, procesar inventario
     if ($new_status === 'completed') {
-        // Aquí puedes agregar lógica para:
-        // - Enviar email de confirmación
-        // - Notificar al restaurante
-        // - Actualizar inventario
-        // - etc.
+        $items_stmt = $pdo->prepare("SELECT id, product_id, product_name, item_type, combo_data, quantity FROM tuu_order_items WHERE order_reference = ?");
+        $items_stmt->execute([$order_reference]);
+        $order_items = $items_stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        error_log("Pago completado exitosamente - Orden: $order_reference, Transacción: $transaction_id");
+        if (!empty($order_items)) {
+            $inventory_items = [];
+            foreach ($order_items as $item) {
+                if ($item['item_type'] === 'combo' && $item['combo_data']) {
+                    $cd = json_decode($item['combo_data'], true);
+                    $inventory_items[] = [
+                        'order_item_id' => $item['id'], 'id' => $item['product_id'],
+                        'name' => $item['product_name'], 'cantidad' => $item['quantity'],
+                        'is_combo' => true, 'combo_id' => $cd['combo_id'] ?? null,
+                        'fixed_items' => $cd['fixed_items'] ?? [], 'selections' => $cd['selections'] ?? []
+                    ];
+                } else {
+                    $inv = ['order_item_id' => $item['id'], 'id' => $item['product_id'],
+                            'name' => $item['product_name'], 'cantidad' => $item['quantity']];
+                    if ($item['combo_data']) {
+                        $cd = json_decode($item['combo_data'], true);
+                        if (isset($cd['customizations'])) $inv['customizations'] = $cd['customizations'];
+                    }
+                    $inventory_items[] = $inv;
+                }
+            }
+            require_once __DIR__ . '/../process_sale_inventory_fn.php';
+            $inv_result = processSaleInventory($pdo, $inventory_items, $order_reference);
+            error_log("TUU Webhook inventario $order_reference: " . ($inv_result['success'] ? 'OK' : ($inv_result['error'] ?? 'unknown')));
+        }
     }
     
     // Responder a TUU que el webhook fue procesado

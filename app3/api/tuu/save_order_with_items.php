@@ -101,20 +101,23 @@ try {
     $stmt = $pdo->prepare($delete_sql);
     $stmt->execute([$order_reference]);
     
-    // 3. Insertar items del carrito
+    // 3. Insertar items del carrito con item_type y combo_data
     $item_sql = "
         INSERT INTO tuu_order_items (
             order_id, 
             order_reference, 
             product_id, 
+            item_type,
+            combo_data,
             product_name, 
             product_price, 
             quantity, 
             subtotal
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ";
     
     $stmt = $pdo->prepare($item_sql);
+    $order_item_ids = [];
     
     foreach ($cart_items as $item) {
         $product_id = $item['id'] ?? null;
@@ -123,18 +126,88 @@ try {
         $quantity = $item['quantity'] ?? 1;
         $subtotal = $product_price * $quantity;
         
+        $is_combo = (isset($item['type']) && $item['type'] === 'combo') ||
+                    (isset($item['category_name']) && $item['category_name'] === 'Combos') ||
+                    !empty($item['selections']);
+        $item_type = $is_combo ? 'combo' : 'product';
+        $combo_data = null;
+        
+        if ($is_combo) {
+            $combo_data = json_encode([
+                'fixed_items' => $item['fixed_items'] ?? [],
+                'selections' => $item['selections'] ?? [],
+                'combo_id' => $item['combo_id'] ?? null,
+                'customizations' => $item['customizations'] ?? [],
+            ]);
+        } else if (!empty($item['customizations'])) {
+            $combo_data = json_encode([
+                'customizations' => $item['customizations']
+            ]);
+        }
+        
         $stmt->execute([
             $order_id,
             $order_reference,
             $product_id,
+            $item_type,
+            $combo_data,
             $product_name,
             $product_price,
             $quantity,
             $subtotal
         ]);
+        $order_item_ids[] = $pdo->lastInsertId();
     }
     
     $pdo->commit();
+    
+    // 4. Procesar inventario después del commit
+    try {
+        require_once __DIR__ . '/../process_sale_inventory_fn.php';
+        
+        $inventory_items = [];
+        foreach ($cart_items as $idx => $ci) {
+            $product_id = $ci['id'] ?? null;
+            if (!$product_id) continue;
+            
+            $is_combo = (isset($ci['type']) && $ci['type'] === 'combo') ||
+                        (isset($ci['category_name']) && $ci['category_name'] === 'Combos') ||
+                        !empty($ci['selections']);
+            
+            if ($is_combo) {
+                $inventory_items[] = [
+                    'id' => $product_id,
+                    'name' => $ci['name'] ?? '',
+                    'cantidad' => $ci['quantity'] ?? 1,
+                    'is_combo' => true,
+                    'combo_id' => $ci['combo_id'] ?? $product_id,
+                    'fixed_items' => $ci['fixed_items'] ?? [],
+                    'selections' => $ci['selections'] ?? [],
+                    'order_item_id' => $order_item_ids[$idx] ?? null,
+                    'customizations' => $ci['customizations'] ?? [],
+                ];
+            } else {
+                $inventory_items[] = [
+                    'id' => $product_id,
+                    'name' => $ci['name'] ?? '',
+                    'cantidad' => $ci['quantity'] ?? 1,
+                    'order_item_id' => $order_item_ids[$idx] ?? null,
+                    'customizations' => $ci['customizations'] ?? [],
+                ];
+            }
+        }
+        
+        $inv_result = processSaleInventory($pdo, $inventory_items, $order_reference);
+        if (!empty($inv_result['skipped'])) {
+            error_log("save_order_with_items - Inventario ya procesado para $order_reference, skipped");
+        } elseif (!$inv_result['success']) {
+            error_log("save_order_with_items - ERROR inventario para $order_reference: " . ($inv_result['error'] ?? 'unknown'));
+        } else {
+            error_log("save_order_with_items - Inventario procesado exitosamente para $order_reference");
+        }
+    } catch (Exception $inv_error) {
+        error_log("save_order_with_items - ERROR procesando inventario: " . $inv_error->getMessage());
+    }
     
     echo json_encode([
         'success' => true,

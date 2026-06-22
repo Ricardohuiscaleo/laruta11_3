@@ -98,20 +98,23 @@ try {
     $stmt = $pdo->prepare($delete_sql);
     $stmt->execute([$order_reference]);
     
-    // 3. Insertar items del carrito
+    // 3. Insertar items del carrito con item_type y combo_data
     $item_sql = "
         INSERT INTO tuu_order_items (
             order_id, 
             order_reference, 
             product_id, 
+            item_type,
+            combo_data,
             product_name, 
             product_price, 
             quantity, 
             subtotal
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ";
     
     $stmt = $pdo->prepare($item_sql);
+    $order_item_ids = [];
     
     foreach ($cart_items as $item) {
         $product_id = $item['id'] ?? null;
@@ -120,18 +123,73 @@ try {
         $quantity = $item['quantity'] ?? 1;
         $subtotal = $product_price * $quantity;
         
+        $is_combo = (isset($item['type']) && $item['type'] === 'combo') ||
+                    (isset($item['category_name']) && $item['category_name'] === 'Combos') ||
+                    !empty($item['selections']);
+        $item_type = $is_combo ? 'combo' : 'product';
+        $combo_data = null;
+        
+        if ($is_combo) {
+            $combo_data = json_encode([
+                'fixed_items' => $item['fixed_items'] ?? [],
+                'selections' => $item['selections'] ?? [],
+                'combo_id' => $item['combo_id'] ?? null,
+                'customizations' => $item['customizations'] ?? [],
+            ]);
+        } else if (!empty($item['customizations'])) {
+            $combo_data = json_encode([
+                'customizations' => $item['customizations']
+            ]);
+        }
+        
         $stmt->execute([
             $order_id,
             $order_reference,
             $product_id,
+            $item_type,
+            $combo_data,
             $product_name,
             $product_price,
             $quantity,
             $subtotal
         ]);
+        $order_item_ids[] = $pdo->lastInsertId();
     }
     
     $pdo->commit();
+    
+    // 4. Procesar inventario después del commit
+    try {
+        $items_stmt = $pdo->prepare("SELECT id, product_id, product_name, item_type, combo_data, quantity FROM tuu_order_items WHERE order_reference = ?");
+        $items_stmt->execute([$order_reference]);
+        $saved_items = $items_stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        if (!empty($saved_items)) {
+            foreach ($saved_items as $si) {
+                $is_combo = ($si['item_type'] ?? '') === 'combo';
+                if ($is_combo && $si['combo_data']) {
+                    $cd = json_decode($si['combo_data'], true);
+                    foreach (($cd['fixed_items'] ?? []) as $fixed) {
+                        $pid = $fixed['product_id'] ?? null;
+                        $qty = ($fixed['quantity'] ?? 1) * $si['quantity'];
+                        if ($pid) deductProductInline($pdo, $pid, $qty, $order_reference, $si['id']);
+                    }
+                    foreach (($cd['selections'] ?? []) as $group) {
+                        $selections = is_array($group) && isset($group[0]) ? $group : [$group];
+                        foreach ($selections as $sel) {
+                            $sid = is_array($sel) ? ($sel['id'] ?? null) : null;
+                            if ($sid) deductProductInline($pdo, $sid, $si['quantity'], $order_reference, $si['id']);
+                        }
+                    }
+                } else if ($si['product_id']) {
+                    deductProductInline($pdo, $si['product_id'], $si['quantity'], $order_reference, $si['id']);
+                }
+            }
+            error_log("caja3 save_order_with_items - Inventario procesado exitosamente para $order_reference");
+        }
+    } catch (Exception $inv_error) {
+        error_log("caja3 save_order_with_items - ERROR procesando inventario: " . $inv_error->getMessage());
+    }
     
     echo json_encode([
         'success' => true,
@@ -146,4 +204,23 @@ try {
         $pdo->rollBack();
     }
     echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+}
+
+function deductProductInline($pdo, $product_id, $quantity, $order_reference, $order_item_id = null) {
+    $recipe = $pdo->prepare("SELECT pr.ingredient_id, pr.quantity, pr.unit, i.current_stock, i.name FROM product_recipes pr JOIN ingredients i ON pr.ingredient_id = i.id WHERE pr.product_id = ? AND i.is_active = 1");
+    $recipe->execute([$product_id]);
+    $rows = $recipe->fetchAll(PDO::FETCH_ASSOC);
+    if (!empty($rows)) {
+        foreach ($rows as $r) {
+            $dq = $r['quantity'] * $quantity;
+            $unit = $r['unit'];
+            if ($unit === 'g') { $dq = $dq / 1000; $unit = 'kg'; }
+            $prev = (float)$r['current_stock'];
+            $new = $prev - $dq;
+            $pdo->prepare("INSERT INTO inventory_transactions (transaction_type, ingredient_id, quantity, unit, previous_stock, new_stock, order_reference, order_item_id) VALUES ('sale', ?, ?, ?, ?, ?, ?, ?)")
+                ->execute([$r['ingredient_id'], -$dq, $unit, $prev, $new, $order_reference, $order_item_id]);
+            $pdo->prepare("UPDATE ingredients SET current_stock = ?, updated_at = NOW() WHERE id = ?")->execute([$new, $r['ingredient_id']]);
+        }
+        $pdo->prepare("UPDATE products p SET stock_quantity = (SELECT COALESCE(FLOOR(MIN(CASE WHEN pr.unit = 'g' THEN i.current_stock * 1000 / pr.quantity ELSE i.current_stock / pr.quantity END)), 0) FROM product_recipes pr JOIN ingredients i ON pr.ingredient_id = i.id WHERE pr.product_id = p.id AND i.is_active = 1 AND i.current_stock > 0) WHERE p.id = ?")->execute([$product_id]);
+    }
 }
