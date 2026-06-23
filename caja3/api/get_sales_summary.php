@@ -131,8 +131,9 @@ try {
     // Calcular delivery fees y extras (dinero para el rider)
     $deliverySql = "SELECT 
                         COUNT(*) as delivery_count,
-                        SUM(delivery_fee) as delivery_total,
-                        SUM(COALESCE(delivery_extras, 0)) as extras_total
+                        SUM(delivery_fee) + SUM(COALESCE(card_surcharge, 0)) as delivery_total,
+                        SUM(COALESCE(delivery_extras, 0)) as extras_total,
+                        SUM(COALESCE(card_surcharge, 0)) as card_surcharge_total
                     FROM tuu_orders
                     WHERE COALESCE(scheduled_time, created_at) >= ? 
                     AND COALESCE(scheduled_time, created_at) < ?
@@ -147,15 +148,16 @@ try {
     $delivery_fees = (float)($deliveryData['delivery_total'] ?? 0);
     $delivery_count = (int)($deliveryData['delivery_count'] ?? 0);
     $delivery_extras = (float)($deliveryData['extras_total'] ?? 0);
+    $card_surcharge_total = (float)($deliveryData['card_surcharge_total'] ?? 0);
     
     // Rider breakdown per shift
     $riderSql = "SELECT 
                     COALESCE(r.nombre, 'Sin asignar') as rider_nombre,
                     COALESCE(r.id, 0) as rider_id,
                     COUNT(*) as order_count,
-                    SUM(o.delivery_fee) as total_fees,
+                    SUM(o.delivery_fee) + SUM(COALESCE(o.card_surcharge, 0)) as total_fees,
                     COALESCE(SUM(rp.monto), 0) as total_pagado,
-                    CASE WHEN SUM(rp.monto) >= SUM(o.delivery_fee) THEN 1 ELSE 0 END as todos_pagados,
+                    CASE WHEN SUM(rp.monto) >= SUM(o.delivery_fee) + SUM(COALESCE(o.card_surcharge, 0)) THEN 1 ELSE 0 END as todos_pagados,
                     GROUP_CONCAT(DISTINCT rp.token SEPARATOR '') as token
                  FROM tuu_orders o
                  LEFT JOIN riders r ON o.rider_id = r.id
@@ -215,6 +217,7 @@ try {
         'delivery_fees' => $delivery_fees,
         'delivery_count' => $delivery_count,
         'delivery_extras' => $delivery_extras,
+        'card_surcharge_total' => $card_surcharge_total,
         'rider_details' => $riderDetails,
         'shift_hours' => $shift_hours,
         'shift_date' => $shift_date,
