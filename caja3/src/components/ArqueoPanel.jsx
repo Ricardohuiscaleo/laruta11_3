@@ -329,22 +329,27 @@ export default function ArqueoPanel({ onClose, openPanel }) {
                         </div>
                       )}
 
-                      {group.rider_id === 0 && !editing && (
-                        <div className="gr-asign">
-                          <select className="gr-sel" defaultValue="" onChange={e => e.target.value && assignRider(group.orders[0]?.id, e.target.value)}>
-                            <option value="">Asignar rider...</option>
-                            {allRiders.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
-                          </select>
-                        </div>
-                      )}
-
                       {group.orders.map(o => (
                         <div key={o.id} className="gr-ord">
                           <div className="gr-ord-addr">{o.delivery_address}</div>
                           <div className="gr-ord-meta">
                             <span>{o.order_number}</span>
+                            {group.rider_id === 0 && (
+                              <span className="gr-asign-link" onClick={() => setEditingRider({ ...editingRider, ['asign_' + o.id]: !editingRider['asign_' + o.id] })}>
+                                Asignar
+                              </span>
+                            )}
                             <span className="gr-ord-fee">${fmt(totalFee(o))}</span>
                           </div>
+                          {group.rider_id === 0 && editingRider['asign_' + o.id] && (
+                            <div className="gr-asign-drop">
+                              <select className="gr-sel" defaultValue="" onChange={e => { if (e.target.value) { assignRider(o.id, e.target.value); setEditingRider({ ...editingRider, ['asign_' + o.id]: false }); } }}>
+                                <option value="">Seleccionar rider...</option>
+                                {allRiders.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
+                              </select>
+                              <button className="gr-cancel" onClick={() => setEditingRider({ ...editingRider, ['asign_' + o.id]: false })}>×</button>
+                            </div>
+                          )}
                         </div>
                       ))}
 
@@ -439,7 +444,9 @@ export default function ArqueoPanel({ onClose, openPanel }) {
         .gr-bpe{background:#fef3c7;color:#d97706}
         .gr-total{font-size:17px;font-weight:800;color:#059669}
         .gr-edit{display:flex;align-items:center;gap:6px;padding:6px 12px;border-bottom:1px solid #f3f4f6}
-        .gr-asign{display:flex;padding:6px 12px;border-bottom:1px solid #f3f4f6}
+        .gr-asign-link{color:#3b82f6;font-size:10px;font-weight:600;cursor:pointer;text-decoration:underline;margin-left:8px}
+        .gr-asign-link:hover{color:#1d4ed8}
+        .gr-asign-drop{display:flex;align-items:center;gap:4px;margin-top:4px}
         .gr-sel{flex:1;font-size:11px;padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;background:white;color:#374151;outline:none}
         .gr-cancel{background:none;border:1px solid #d1d5db;border-radius:4px;color:#6b7280;font-size:9px;padding:3px 8px;cursor:pointer}
         .gr-ord{padding:6px 12px 6px 20px;border-bottom:1px solid #f9fafb}
