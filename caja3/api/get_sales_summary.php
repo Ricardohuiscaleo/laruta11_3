@@ -151,33 +151,32 @@ try {
     // Rider breakdown per shift
     $riderSql = "SELECT 
                     COALESCE(r.nombre, 'Sin asignar') as rider_nombre,
-                    r.id as rider_id,
+                    COALESCE(r.id, 0) as rider_id,
                     COUNT(*) as order_count,
                     SUM(o.delivery_fee) as total_fees,
-                    COALESCE(rp_paid.total_paid, 0) as total_pagado,
-                    CASE WHEN COUNT(*) = COALESCE(rp_paid.paid_count, 0) THEN 1 ELSE 0 END as todos_pagados,
-                    rp_paid.token
+                    COALESCE(SUM(rp.monto), 0) as total_pagado,
+                    CASE WHEN SUM(rp.monto) >= SUM(o.delivery_fee) THEN 1 ELSE 0 END as todos_pagados,
+                    GROUP_CONCAT(DISTINCT rp.token SEPARATOR '') as token
                  FROM tuu_orders o
                  LEFT JOIN riders r ON o.rider_id = r.id
-                     LEFT JOIN (
-                         SELECT rp2.rider_id, rp2.order_id,
-                                COUNT(*) as paid_count,
-                                SUM(rp2.monto) as total_paid,
-                                GROUP_CONCAT(DISTINCT rp2.token SEPARATOR '') as token
-                         FROM rider_pagos rp2
-                         WHERE rp2.estado = 'pagado'
-                         GROUP BY rp2.rider_id
-                     ) rp_paid ON rp_paid.rider_id = o.rider_id AND rp_paid.order_id = o.id
+                 LEFT JOIN rider_pagos rp ON rp.rider_id = o.rider_id AND rp.estado = 'pagado'
+                    AND rp.fecha >= ? AND rp.fecha <= ?
                  WHERE COALESCE(o.scheduled_time, o.created_at) >= ? 
                    AND COALESCE(o.scheduled_time, o.created_at) < ?
                    AND o.payment_status = 'paid'
                    AND o.order_number NOT LIKE 'RL6-%' AND o.order_number NOT LIKE 'TRF-%'
                    AND o.delivery_fee > 0
-                 GROUP BY o.rider_id, r.nombre
+                 GROUP BY o.rider_id
                  ORDER BY total_fees DESC";
     
+    $shiftStartDateObj = new DateTime($shiftStartDate);
+    $shiftEndDateObj = new DateTime($shiftStartDate);
+    $shiftEndDateObj->modify('+1 day');
+    $shiftDateStart = $shiftStartDateObj->format('Y-m-d');
+    $shiftDateEnd = $shiftEndDateObj->format('Y-m-d');
+    
     $riderStmt = $pdo->prepare($riderSql);
-    $riderStmt->execute([$start_date, $end_date]);
+    $riderStmt->execute([$shiftDateStart, $shiftDateEnd, $start_date, $end_date]);
     $riderDetails = $riderStmt->fetchAll(PDO::FETCH_ASSOC);
     
     // Calcular total general
