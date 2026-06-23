@@ -21,6 +21,8 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
   const [riderMonitor, setRiderMonitor] = useState(null); // order.id of expanded rider monitor
   const [packagingQty, setPackagingQty] = useState({}); // { [orderId]: { bolsa_grande: number, bolsa_mediana: number } }
   const [bagInfoModal, setBagInfoModal] = useState(null); // { label, img, description }
+  const [riders, setRiders] = useState([]);
+  const [selectedRider, setSelectedRider] = useState({}); // { [orderId]: riderId }
   const [showNewFeaturePopup, setShowNewFeaturePopup] = useState(() => {
     const today = new Date();
     const d = today.getDate(), m = today.getMonth() + 1, y = today.getFullYear();
@@ -28,9 +30,19 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
     return isValidDay && !sessionStorage.getItem('dispatch_feature_seen');
   });
 
+  const loadRiders = async () => {
+    try {
+      const res = await fetch('/api/riders/get_riders.php');
+      const data = await res.json();
+      if (data.success) setRiders(data.riders || []);
+    } catch (e) {
+      console.error('Error cargando riders:', e);
+    }
+  };
+
   useEffect(() => {
     // Cargar datos y quitar loading después
-    Promise.all([loadOrders(), loadChecklists()]).finally(() => {
+    Promise.all([loadOrders(), loadChecklists(), loadRiders()]).finally(() => {
       setLoading(false);
     });
 
@@ -385,10 +397,27 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
   };
 
   const dispatchToDelivery = async (orderId, orderNumber) => {
-    if (!confirm(`¿Despachar pedido ${orderNumber} al rider?`)) return;
+    const riderId = selectedRider[orderId];
+    if (!riderId) {
+      alert('Selecciona un rider antes de despachar');
+      return;
+    }
+    if (!confirm(`¿Despachar pedido ${orderNumber} a ${riders.find(r => r.id === riderId)?.nombre || 'rider'}?`)) return;
 
     setProcessing(orderId);
     try {
+      // Assign rider first
+      const assignRes = await fetch('/api/riders/assign_rider.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: orderId, rider_id: riderId })
+      });
+      const assignData = await assignRes.json();
+      if (!assignData.success) {
+        alert('Error asignando rider: ' + (assignData.error || ''));
+        return;
+      }
+
       // Register packaging consumption for delivery orders
       await registerPackaging(orderNumber, orderId, 'delivery');
 
@@ -944,20 +973,27 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
             </div>
             {order.delivery_type === 'delivery' && (
               <>
-              <div className="flex items-center justify-between bg-white border border-gray-200 rounded p-2">
-                <span className="text-xs font-bold text-gray-800">Enviar a Rider 👉🏻</span>
-                <button
-                  onClick={() => {
-                    const riderUrl = `https://mi.laruta11.cl/rider/${order.id}`;
-                    const delFee = parseInt(order.delivery_fee || 0);
-                    const msg = `🛵 *Delivery #${order.order_number}*\n\n💰 Delivery: $${delFee.toLocaleString('es-CL')}\n📍 ${order.delivery_address || 'Sin dirección'}${order.delivery_distance_km ? ` (${order.delivery_distance_km}km)` : ''}\n\n👉 Tomar pedido:\n${riderUrl}`;
-                    window.location.href = `whatsapp://send?text=${encodeURIComponent(msg)}`;
-                  }}
-                  className="flex items-center gap-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
-                >
-                  <Send size={12} />
-                  Rider
-                </button>
+              <div className="bg-white border border-gray-200 rounded p-2 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-gray-800">Enviar a Rider 👉🏻</span>
+                  {order.rider_id && (
+                    <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded font-medium">
+                      🛵 {riders.find(r => r.id === order.rider_id)?.nombre || 'Rider asignado'}
+                    </span>
+                  )}
+                </div>
+                {!order.rider_id && (
+                  <select
+                    value={selectedRider[order.id] || ''}
+                    onChange={(e) => setSelectedRider(prev => ({ ...prev, [order.id]: parseInt(e.target.value) }))}
+                    className="w-full text-xs border border-gray-300 rounded px-2 py-1.5 bg-white focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none"
+                  >
+                    <option value="">Seleccionar rider...</option>
+                    {riders.map(r => (
+                      <option key={r.id} value={r.id}>{r.nombre}</option>
+                    ))}
+                  </select>
+                )}
               </div>
               {/* Rider monitor chevron */}
               <button
@@ -1450,13 +1486,18 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                   );
                 }
                 
-                // Fase 1: necesita fotos + despachar
+                // Fase 1: necesita rider + fotos + despachar
                 const photoReqs = generatePhotoRequirements('delivery');
                 const orderSlots = photoSlots[order.id] || {};
                 const uploadedMap = {};
                 photoReqs.forEach(r => { if (orderSlots[r.id] && orderSlots[r.id].photoUrl) uploadedMap[r.id] = orderSlots[r.id].photoUrl; });
                 const btnState = getButtonState(photoReqs, uploadedMap);
                 const missingCount = photoReqs.length - Object.keys(uploadedMap).length;
+                const hasRider = !!selectedRider[order.id];
+                const allReady = btnState.enabled && hasRider;
+                const missing = [];
+                if (!hasRider) missing.push('rider');
+                if (!btnState.enabled) missing.push(`${missingCount} de 2 fotos`);
                 return (
                   <>
                     {!isPaid && (
@@ -1466,16 +1507,16 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                     )}
                     <button
                       onClick={() => {
-                        if (btnState.enabled) {
+                        if (allReady) {
                           dispatchToDelivery(order.id, order.order_number);
                         } else {
-                          alert(`Faltan ${missingCount} de 2 fotos`);
+                          alert('Falta: ' + missing.join(', '));
                         }
                       }}
                       disabled={processing === order.id}
-                      className={`flex-1 ${processing === order.id ? 'bg-gray-400 text-gray-200' : btnState.className} font-bold py-2 px-3 rounded text-xs`}
+                      className={`flex-1 ${processing === order.id ? 'bg-gray-400 text-gray-200' : allReady ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-gray-400 text-gray-200'} font-bold py-2 px-3 rounded text-xs`}
                     >
-                      {processing === order.id ? '⏳' : btnState.text}
+                      {processing === order.id ? '⏳' : allReady ? '📦 DESPACHAR A DELIVERY' : 'FALTAN ' + missing.join(' Y ').toUpperCase()}
                     </button>
                   </>
                 );
