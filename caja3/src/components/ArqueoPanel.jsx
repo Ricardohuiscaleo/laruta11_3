@@ -18,6 +18,7 @@ export default function ArqueoPanel({ onClose, openPanel }) {
   const [assigningId, setAssigningId] = useState(null);
   const [uploadingId, setUploadingId] = useState(null);
   const [metodoPago, setMetodoPago] = useState({});
+  const [editingRider, setEditingRider] = useState({});
 
   useEffect(() => {
     loadSalesData();
@@ -269,7 +270,18 @@ export default function ArqueoPanel({ onClose, openPanel }) {
                       {o.delivery_address && <div className="do-ad">{o.delivery_address}</div>}
                       <div className="do-rider">
                         <Bike size={11} />
-                        {o.rider_nombre ? <span>{o.rider_nombre}</span> : <span className="do-sin">Sin asignar</span>}
+                        {o.rider_nombre ? (
+                          <>
+                            <span>{o.rider_nombre}</span>
+                            {!paid && (
+                              <button className="do-cambiar" onClick={() => setEditingRider({ ...editingRider, [o.id]: !editingRider[o.id] })}>
+                                Cambiar
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          <span className="do-sin">Sin asignar</span>
+                        )}
                         <span className="do-monto">${fmt(fee)}</span>
                       </div>
                       {paid && o.comprobante_url && (
@@ -277,16 +289,19 @@ export default function ArqueoPanel({ onClose, openPanel }) {
                           <a href={o.comprobante_url} target="_blank" className="do-comp-link">Ver comprobante</a>
                         </div>
                       )}
-                      {!paid && !o.rider_id ? (
+                      {!paid && (!o.rider_id || editingRider[o.id]) ? (
                         <div className="do-asign">
-                          <select className="do-sel" defaultValue="" onChange={e => e.target.value && assignRider(o.id, e.target.value)} disabled={assigningId === o.id}>
-                            <option value="">Asignar rider...</option>
+                          <select className="do-sel" defaultValue={o.rider_id || ''} onChange={e => { e.target.value && assignRider(o.id, e.target.value); setEditingRider({ ...editingRider, [o.id]: false }); }} disabled={assigningId === o.id}>
+                            <option value="">{o.rider_id ? 'Cambiar rider...' : 'Asignar rider...'}</option>
                             {allRiders.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
                           </select>
                           {assigningId === o.id && <Loader2 size={12} className="spin" />}
+                          {editingRider[o.id] && (
+                            <button className="do-cancel" onClick={() => setEditingRider({ ...editingRider, [o.id]: false })}>Cancelar</button>
+                          )}
                         </div>
                       ) : null}
-                      {!paid && o.rider_id ? (
+                      {!paid && o.rider_id && !editingRider[o.id] ? (
                         <div className="do-acts">
                           <select className="dg-met" value={metodoPago[o.id] || 'transferencia'} onChange={e => setMetodoPago({ ...metodoPago, [o.id]: e.target.value })}>
                             <option value="transferencia">Transferencia</option>
@@ -374,6 +389,8 @@ export default function ArqueoPanel({ onClose, openPanel }) {
         .do-ad{padding:0 10px 4px;font-size:10px;color:#6b7280}
         .do-rider{display:flex;align-items:center;gap:6px;padding:4px 10px;border-top:1px solid #f3f4f6;font-size:11px;color:#374151}
         .do-sin{color:#9ca3af;font-style:italic}
+        .do-cambiar{background:none;border:none;color:#3b82f6;font-size:9px;cursor:pointer;padding:0;text-decoration:underline}
+        .do-cancel{background:none;border:1px solid #d1d5db;border-radius:4px;color:#6b7280;font-size:9px;padding:3px 6px;cursor:pointer}
         .do-monto{margin-left:auto;font-size:14px;font-weight:800;color:#059669}
         .do-comp{padding:4px 10px 6px;border-top:1px solid #f3f4f6}
         .do-comp-link{font-size:10px;color:#3b82f6;text-decoration:underline}
