@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CreditCard, Building2, Banknote, Smartphone, Bike, TrendingUp, Pencil, ChevronLeft, ChevronRight, BarChart3, Clock, Wallet, Moon, Calendar, BadgeDollarSign, X } from 'lucide-react';
+import { CreditCard, Building2, Banknote, Smartphone, Bike, TrendingUp, Pencil, ChevronLeft, ChevronRight, BarChart3, Clock, Wallet, Moon, Calendar, BadgeDollarSign, X, ChevronRight, Upload, CheckCircle, Share2, Loader2, Phone } from 'lucide-react';
 import SaldoCajaModal from './modals/SaldoCajaModal.jsx';
 
 export default function ArqueoPanel({ onClose, openPanel }) {
@@ -11,6 +11,13 @@ export default function ArqueoPanel({ onClose, openPanel }) {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
   const [showSaldoModal, setShowSaldoModal] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [deliveryOrders, setDeliveryOrders] = useState([]);
+  const [allRiders, setAllRiders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+  const [assigningId, setAssigningId] = useState(null);
+  const [uploadingId, setUploadingId] = useState(null);
+  const [metodoPago, setMetodoPago] = useState({});
 
   useEffect(() => {
     loadSalesData();
@@ -43,6 +50,108 @@ export default function ArqueoPanel({ onClose, openPanel }) {
     } catch (e) {}
   };
 
+  const openDeliveryModal = async () => {
+    if (!salesData) return;
+    setShowModal(true);
+    setLoadingOrders(true);
+    try {
+      const url = `/api/riders/get_delivery_orders.php?start_date=${encodeURIComponent(salesData.period.start)}&end_date=${encodeURIComponent(salesData.period.end)}`;
+      const data = await (await fetch(url)).json();
+      if (data.success) {
+        setDeliveryOrders(data.orders || []);
+        setAllRiders(data.riders || []);
+      }
+    } catch (e) {
+      console.error('Error loading delivery orders:', e);
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
+  const assignRider = async (orderId, riderId) => {
+    setAssigningId(orderId);
+    try {
+      const res = await (await fetch('/api/riders/assign_rider.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: orderId, rider_id: parseInt(riderId) }),
+      })).json();
+      if (res.success) {
+        setDeliveryOrders(prev => prev.map(o =>
+          o.id === orderId ? { ...o, rider_id: parseInt(riderId), rider_nombre: res.rider?.nombre || null } : o
+        ));
+        await loadSalesData(currentDaysAgo);
+        await openDeliveryModal();
+      } else {
+        alert('Error: ' + (res.error || 'desconocido'));
+      }
+    } catch (e) {
+      alert('Error al asignar rider');
+    } finally {
+      setAssigningId(null);
+    }
+  };
+
+  const handlePayRider = async (riderId, e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    setUploadingId(riderId);
+    try {
+      const fd = new FormData();
+      fd.append('rider_id', riderId);
+      fd.append('comprobante', file);
+      fd.append('metodo_pago', metodoPago[riderId] || 'transferencia');
+      fd.append('start_date', salesData.period.start);
+      fd.append('end_date', salesData.period.end);
+      const res = await (await fetch('/api/riders/mark_rider_paid.php', { method: 'POST', body: fd })).json();
+      if (res.success) {
+        await loadSalesData(currentDaysAgo);
+        await openDeliveryModal();
+      } else {
+        alert('Error: ' + (res.error || 'desconocido'));
+      }
+    } catch (err) {
+      alert('Error al conectar con el servidor');
+    } finally {
+      setUploadingId(null);
+    }
+  };
+
+  const handlePayNoFile = async (riderId, riderName) => {
+    if (!confirm(`Pagar a ${riderName}?`)) return;
+    setUploadingId(riderId);
+    try {
+      const fd = new FormData();
+      fd.append('rider_id', riderId);
+      fd.append('metodo_pago', metodoPago[riderId] || 'transferencia');
+      fd.append('start_date', salesData.period.start);
+      fd.append('end_date', salesData.period.end);
+      const res = await (await fetch('/api/riders/mark_rider_paid.php', { method: 'POST', body: fd })).json();
+      if (res.success) {
+        await loadSalesData(currentDaysAgo);
+        await openDeliveryModal();
+      } else {
+        alert('Error: ' + (res.error || 'desconocido'));
+      }
+    } catch (err) {
+      alert('Error al conectar con el servidor');
+    } finally {
+      setUploadingId(null);
+    }
+  };
+
+  const sharePayment = async (rider) => {
+    if (!rider || !rider.token) return;
+    const url = `${window.location.origin}/pago-rider.php?token=${rider.token}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      alert('Link copiado al portapapeles');
+    } catch {
+      prompt('Comparte este link:', url);
+    }
+  };
+
   const openCajaModal = () => setShowSaldoModal(true);
   const showDetail = () => {
     if (!salesData) return;
@@ -54,13 +163,24 @@ export default function ArqueoPanel({ onClose, openPanel }) {
   };
   const fmt = (n) => Math.round(n).toLocaleString('es-CL');
 
+  const groupByRider = (orders) => {
+    const groups = {};
+    orders.forEach(o => {
+      const key = o.rider_id || 0;
+      if (!groups[key]) {
+        groups[key] = { rider_id: key, rider_name: o.rider_nombre || 'Sin asignar', orders: [], total_fees: 0 };
+      }
+      groups[key].orders.push(o);
+      const fee = parseFloat(o.delivery_fee) + parseFloat(o.card_surcharge || 0);
+      groups[key].total_fees += fee;
+    });
+    return Object.values(groups);
+  };
+
   if (initialLoading) {
     return (
       <div style={{ position: 'fixed', inset: 0, background: 'white', zIndex: 50, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <div className="aq-header">
-          <h1>💰 Arqueo de Caja</h1>
-          <button className="aq-close" onClick={onClose} aria-label="Cerrar arqueo"><X size={20} /></button>
-        </div>
+        <div className="aq-header"><h1>💰 Arqueo de Caja</h1><button className="aq-close" onClick={onClose}><X size={20} /></button></div>
         <div style={{ flex: 1, overflow: 'auto', padding: 4 }}>
           <div style={{ maxWidth: 600, margin: '0 auto' }}>
             {[...Array(10)].map((_, i) => (
@@ -68,13 +188,7 @@ export default function ArqueoPanel({ onClose, openPanel }) {
             ))}
           </div>
         </div>
-        <style>{`
-          @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
-          .aq-header{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:linear-gradient(to right,#ef4444,#f97316);flex-shrink:0;padding-top:max(0.75rem,env(safe-area-inset-top))}
-          .aq-header h1{font-size:18px;color:white;margin:0;display:flex;align-items:center;gap:6px;font-weight:700}
-          .aq-close{background:none;border:none;cursor:pointer;padding:6px;border-radius:6px;color:white;display:flex;align-items:center;justify-content:center}
-          .aq-close:hover{background:rgba(255,255,255,0.2);color:white}
-        `}</style>
+        <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }`}</style>
       </div>
     );
   }
@@ -87,6 +201,7 @@ export default function ArqueoPanel({ onClose, openPanel }) {
   const deliveryExtras = salesData.delivery_extras || 0;
   const totalRuta11 = salesData.total_general - deliveryTotal - deliveryExtras;
   const label = currentDaysAgo === 0 ? 'Turno Actual' : `Hace ${currentDaysAgo}d`;
+  const riders = salesData.rider_details || [];
 
   const rows = [
     { icon: <CreditCard size={14} />, label: 'Tarjetas', ...s.card },
@@ -97,14 +212,14 @@ export default function ArqueoPanel({ onClose, openPanel }) {
     { icon: <Banknote size={14} />, label: 'PedidosYA Efectivo', ...(s.pedidosya_cash || { count: 0, total: 0 }) },
     { icon: <BadgeDollarSign size={14} />, label: 'Crédito RL6', ...s.rl6_credit },
     { icon: <BadgeDollarSign size={14} />, label: 'Crédito R11', ...s.r11_credit },
-    { icon: <Bike size={14} />, label: 'Delivery', count: deliveryCount, total: deliveryTotal },
+    { icon: <Bike size={14} />, label: 'Delivery', count: deliveryCount, total: deliveryTotal, isDelivery: true },
   ];
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'white', zIndex: 50, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div className="aq-header">
         <h1>💰 Arqueo de Caja</h1>
-        <button className="aq-close" onClick={onClose} aria-label="Cerrar arqueo"><X size={20} /></button>
+        <button className="aq-close" onClick={onClose}><X size={20} /></button>
       </div>
 
       <div style={{ flex: 1, overflow: 'auto' }}>
@@ -124,19 +239,20 @@ export default function ArqueoPanel({ onClose, openPanel }) {
               <span className="th-t">Total</span>
             </div>
             {rows.map((r, i) => (
-              <div key={i} className={`tr ${r.cls || ''}`}>
-                <div className="td-m">{r.icon}<span>{r.label}</span></div>
+              <div
+                key={i}
+                className={`tr ${r.cls || ''} ${r.isDelivery ? 'tr-del' : ''}`}
+                onClick={() => r.isDelivery && openDeliveryModal()}
+                style={r.isDelivery ? { cursor: 'pointer' } : {}}
+              >
+                <div className="td-m">
+                  {r.icon}<span>{r.label}</span>
+                  {r.isDelivery && <ChevronRight size={12} className="del-arrow" />}
+                </div>
                 <div className="td-p">{r.count}</div>
                 <div className="td-t">${fmt(r.total)}</div>
               </div>
             ))}
-            {deliveryExtras > 0 && (
-              <div className="tr">
-                <div className="td-m" style={{paddingLeft:30}}><span>Extras Delivery</span></div>
-                <div className="td-p"></div>
-                <div className="td-t">${fmt(deliveryExtras)}</div>
-              </div>
-            )}
           </div>
 
           <div className="tc">
@@ -162,6 +278,83 @@ export default function ArqueoPanel({ onClose, openPanel }) {
 
       <SaldoCajaModal isOpen={showSaldoModal} onClose={() => setShowSaldoModal(false)} />
 
+      {/* Delivery Modal */}
+      {showModal && (
+        <div className="dm-over" onClick={() => setShowModal(false)}>
+          <div className="dm" onClick={e => e.stopPropagation()}>
+            <div className="dm-h">
+              <h3><Bike size={16} /> Delivery</h3>
+              <button className="dm-x" onClick={() => setShowModal(false)}><X size={16} /></button>
+            </div>
+            {loadingOrders ? (
+              <div className="dm-load">Cargando pedidos...</div>
+            ) : (
+              <div className="dm-b">
+                {groupByRider(deliveryOrders).map((group) => {
+                  const rider = riders.find(r => parseInt(r.rider_id) === group.rider_id);
+                  return (
+                    <div key={group.rider_id} className={`dg ${rider && parseInt(rider.todos_pagados) === 1 ? 'dg-paid' : ''}`}>
+                      <div className="dg-h">
+                        <div className="dg-hl">
+                          <span className="dg-n">{group.rider_name}</span>
+                          <span className={rider && parseInt(rider.todos_pagados) === 1 ? 'st-p' : 'st-pen'}>
+                            {rider && parseInt(rider.todos_pagados) === 1 ? 'Pagado' : 'Pendiente'}
+                          </span>
+                        </div>
+                        <span className="dg-t">${fmt(group.total_fees)}</span>
+                      </div>
+                      <div className="dg-ords">
+                        {group.orders.map(o => (
+                          <div key={o.id} className="do">
+                            <div className="do-h">
+                              <span className="do-n">{o.order_number}</span>
+                              <span className="do-hr">{o.hora}</span>
+                            </div>
+                            {o.customer_name && <div className="do-c">
+                              <span>{o.customer_name}</span>
+                              {o.customer_phone && <a href={`tel:${o.customer_phone}`} className="do-tel"><Phone size={10} /> {o.customer_phone}</a>}
+                            </div>}
+                            {o.delivery_address && <div className="do-ad">{o.delivery_address}</div>}
+                            <div className="do-f">Delivery ${fmt(o.delivery_fee)}{parseFloat(o.card_surcharge || 0) > 0 && ` (+$${fmt(o.card_surcharge)} 💳)`}</div>
+                            {!group.rider_id && (
+                              <div className="do-asign">
+                                <select className="do-sel" defaultValue="" onChange={e => e.target.value && assignRider(o.id, e.target.value)} disabled={assigningId === o.id}>
+                                  <option value="">Asignar rider...</option>
+                                  {allRiders.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
+                                </select>
+                                {assigningId === o.id && <Loader2 size={12} className="spin" />}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      {(!rider || parseInt(rider.todos_pagados) !== 1) && (
+                        <div className="dg-acts">
+                          <select className="dg-met" value={metodoPago[group.rider_id] || 'transferencia'} onChange={e => setMetodoPago({ ...metodoPago, [group.rider_id]: e.target.value })}>
+                            <option value="transferencia">Transferencia</option>
+                            <option value="efectivo">Efectivo</option>
+                          </select>
+                          <label className={`dg-btn up ${uploadingId === group.rider_id ? 'dis' : ''}`}>
+                            {uploadingId === group.rider_id ? <Loader2 size={12} className="spin" /> : <Upload size={12} />}
+                            Subir comprobante
+                            <input type="file" className="hidden" accept="image/*" disabled={uploadingId === group.rider_id} onChange={e => handlePayRider(group.rider_id || 0, e)} />
+                          </label>
+                          <button className="dg-btn pay" onClick={() => handlePayNoFile(group.rider_id || 0, group.rider_name)} disabled={uploadingId === group.rider_id}>Pagar</button>
+                        </div>
+                      )}
+                      {rider && parseInt(rider.todos_pagados) === 1 && rider.token && (
+                        <button className="dg-btn share" onClick={() => sharePayment(rider)}><Share2 size={12} /> Compartir detalle de pago</button>
+                      )}
+                    </div>
+                  );
+                })}
+                {deliveryOrders.length === 0 && <div className="dm-empty">Sin pedidos delivery en este turno</div>}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <style>{`
         .aq-header{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:linear-gradient(to right,#ef4444,#f97316);flex-shrink:0;padding-top:max(0.75rem,env(safe-area-inset-top))}
         .aq-header h1{font-size:18px;color:white;margin:0;display:flex;align-items:center;gap:6px;font-weight:700}
@@ -180,9 +373,12 @@ export default function ArqueoPanel({ onClose, openPanel }) {
         .th-m{flex:1}.th-p{width:50px;text-align:center}.th-t{width:90px;text-align:right}
         .tr{display:flex;align-items:center;padding:6px 10px;border-bottom:1px solid #f3f4f6}
         .tr:last-child{border-bottom:none}
+        .tr-del{background:#fffbeb}
+        .tr-del:hover{background:#fef3c7}
         .td-m{flex:1;display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#374151}
         .td-p{width:50px;text-align:center;font-size:12px;font-weight:600;color:#6b7280}
         .td-t{width:90px;text-align:right;font-size:13px;font-weight:700;color:#111827}
+        .del-arrow{color:#d97706;margin-left:auto}
         .tc{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border-radius:10px;padding:10px 12px;margin-bottom:6px;box-shadow:0 2px 6px rgba(102,126,234,.3)}
         .tc-l{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:700;opacity:.9}
         .tc-r{text-align:right}
@@ -198,6 +394,48 @@ export default function ArqueoPanel({ onClose, openPanel }) {
         .nv-b:disabled{opacity:.5;cursor:not-allowed}
         .bt-det{background:#8b5cf6;color:white;margin-bottom:4px}
         .bt-det:hover{background:#7c3aed}
+        /* delivery modal */
+        .dm-over{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:1000;overflow-y:auto;padding:16px}
+        .dm{max-width:520px;margin:0 auto;background:white;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.2);overflow:hidden}
+        .dm-h{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #e5e7eb;position:sticky;top:0;background:white;z-index:2}
+        .dm-h h3{font-size:14px;display:flex;align-items:center;gap:6px;color:#374151;margin:0}
+        .dm-x{background:none;border:none;color:#9ca3af;cursor:pointer;padding:4px}
+        .dm-x:hover{color:#374151}
+        .dm-load{padding:24px;text-align:center;font-size:13px;color:#9ca3af}
+        .dm-b{padding:8px}
+        .dg{border:1px solid #e5e7eb;border-radius:10px;margin-bottom:8px;overflow:hidden}
+        .dg-paid{opacity:.65;background:#f9fafb}
+        .dg-h{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#f9fafb;border-bottom:1px solid #e5e7eb}
+        .dg-hl{display:flex;align-items:center;gap:6px}
+        .dg-n{font-size:13px;font-weight:700;color:#374151}
+        .dg-t{font-size:16px;font-weight:800;color:#111827}
+        .st-p,.st-pen{font-size:9px;padding:1px 5px;border-radius:3px;font-weight:600}
+        .st-p{background:#d1fae5;color:#059669}
+        .st-pen{background:#fef3c7;color:#d97706}
+        .dg-ords{padding:6px 12px}
+        .do{padding:6px 0;border-bottom:1px solid #f3f4f6}
+        .do:last-child{border-bottom:none}
+        .do-h{display:flex;justify-content:space-between;font-size:10px;color:#6b7280;margin-bottom:1px}
+        .do-n{font-weight:600;color:#374151}
+        .do-hr{color:#9ca3af}
+        .do-c{font-size:11px;color:#374151;display:flex;gap:6px;align-items:center;margin-bottom:1px}
+        .do-tel{color:#3b82f6;text-decoration:none;display:inline-flex;align-items:center;gap:2px}
+        .do-ad{font-size:10px;color:#6b7280;margin-bottom:2px}
+        .do-f{font-size:11px;font-weight:600;color:#059669;margin-bottom:4px}
+        .do-asign{display:flex;align-items:center;gap:6px}
+        .do-sel{flex:1;font-size:10px;padding:4px 6px;border:1px solid #d1d5db;border-radius:5px;background:white;color:#374151;outline:none}
+        .dg-acts{display:flex;align-items:center;gap:6px;padding:8px 12px;border-top:1px solid #e5e7eb;flex-wrap:wrap}
+        .dg-met{font-size:10px;padding:4px 6px;border:1px solid #d1d5db;border-radius:5px;background:white;color:#374151;outline:none}
+        .dg-btn{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border:none;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;transition:all .15s}
+        .dg-btn.up{background:#fef3c7;color:#d97706}.dg-btn.up:hover{background:#fde68a}
+        .dg-btn.pay{background:#dbeafe;color:#2563eb}.dg-btn.pay:hover{background:#bfdbfe}
+        .dg-btn.pay:disabled,.dis{opacity:.5;cursor:not-allowed;pointer-events:none}
+        .dg-btn.share{background:#f3e8ff;color:#7c3aed;margin:8px 12px;width:calc(100% - 24px);justify-content:center}
+        .dg-btn.share:hover{background:#e9d5ff}
+        .dm-empty{padding:32px;text-align:center;font-size:13px;color:#9ca3af}
+        .hidden{display:none}
+        .spin{animation:spin 1s linear infinite}
+        @keyframes spin{100%{transform:rotate(360deg)}}
       `}</style>
     </div>
   );
