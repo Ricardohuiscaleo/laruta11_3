@@ -35,7 +35,7 @@ export const pagosDeliveryApi = {
   generateSettlement(date: string) {
     return apiFetch<{ success: boolean; settlement: DailySettlement }>(
       '/admin/pagos-delivery/settlements/generate',
-      { method: 'POST', body: { date } },
+      { method: 'POST', body: JSON.stringify({ date }) },
     );
   },
 

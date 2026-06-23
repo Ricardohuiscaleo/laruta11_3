@@ -1,7 +1,18 @@
 import React, { useState, useCallback, useEffect, Suspense } from 'react';
 import { DollarSign, History, Upload, Sun, Moon } from 'lucide-react';
-import TabSkeleton from '@/components/admin/skeletons/TabSkeleton';
-import type { SectionProps } from '@/components/admin/AdminShell';
+
+interface SectionProps {
+  onHeaderConfig?: (config: any) => void;
+}
+
+function TabSkeleton() {
+  return (
+    <div className="animate-pulse space-y-4 p-4">
+      <div className="h-8 w-48 rounded bg-white/10" />
+      <div className="h-64 rounded-xl bg-white/5" />
+    </div>
+  );
+}
 
 type TabKey = 'liquidaciones' | 'historial';
 
