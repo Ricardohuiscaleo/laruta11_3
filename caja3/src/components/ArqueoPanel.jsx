@@ -68,6 +68,30 @@ export default function ArqueoPanel({ onClose, openPanel }) {
     }
   };
 
+  const payOrder = async (order, file) => {
+    if (!file && !confirm(`Pagar ${order.order_number} ($${fmt(totalFee(order))})?`)) return;
+    setUploadingId(order.id);
+    try {
+      const fd = new FormData();
+      fd.append('order_id', order.id);
+      if (file) fd.append('comprobante', file);
+      fd.append('metodo_pago', metodoPago[order.id] || 'transferencia');
+      fd.append('start_date', salesData.period.start);
+      fd.append('end_date', salesData.period.end);
+      const res = await (await fetch('/api/riders/mark_rider_paid.php', { method: 'POST', body: fd })).json();
+      if (res.success) {
+        await loadSalesData(currentDaysAgo);
+        await openDeliveryModal();
+      } else {
+        alert('Error: ' + (res.error || 'desconocido'));
+      }
+    } catch (err) {
+      alert('Error al conectar con el servidor');
+    } finally {
+      setUploadingId(null);
+    }
+  };
+
   const assignRider = async (orderId, riderId) => {
     setAssigningId(orderId);
     try {
@@ -92,58 +116,8 @@ export default function ArqueoPanel({ onClose, openPanel }) {
     }
   };
 
-  const handlePayRider = async (riderId, e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    e.target.value = '';
-    setUploadingId(riderId);
-    try {
-      const fd = new FormData();
-      fd.append('rider_id', riderId);
-      fd.append('comprobante', file);
-      fd.append('metodo_pago', metodoPago[riderId] || 'transferencia');
-      fd.append('start_date', salesData.period.start);
-      fd.append('end_date', salesData.period.end);
-      const res = await (await fetch('/api/riders/mark_rider_paid.php', { method: 'POST', body: fd })).json();
-      if (res.success) {
-        await loadSalesData(currentDaysAgo);
-        await openDeliveryModal();
-      } else {
-        alert('Error: ' + (res.error || 'desconocido'));
-      }
-    } catch (err) {
-      alert('Error al conectar con el servidor');
-    } finally {
-      setUploadingId(null);
-    }
-  };
-
-  const handlePayNoFile = async (riderId, riderName) => {
-    if (!confirm(`Pagar a ${riderName}?`)) return;
-    setUploadingId(riderId);
-    try {
-      const fd = new FormData();
-      fd.append('rider_id', riderId);
-      fd.append('metodo_pago', metodoPago[riderId] || 'transferencia');
-      fd.append('start_date', salesData.period.start);
-      fd.append('end_date', salesData.period.end);
-      const res = await (await fetch('/api/riders/mark_rider_paid.php', { method: 'POST', body: fd })).json();
-      if (res.success) {
-        await loadSalesData(currentDaysAgo);
-        await openDeliveryModal();
-      } else {
-        alert('Error: ' + (res.error || 'desconocido'));
-      }
-    } catch (err) {
-      alert('Error al conectar con el servidor');
-    } finally {
-      setUploadingId(null);
-    }
-  };
-
-  const sharePayment = async (rider) => {
-    if (!rider || !rider.token) return;
-    const url = `${window.location.origin}/pago-rider.php?token=${rider.token}`;
+  const sharePayment = async (orderId) => {
+    const url = `${window.location.origin}/pago-rider.php?order_id=${orderId}`;
     try {
       await navigator.clipboard.writeText(url);
       alert('Link copiado al portapapeles');
@@ -163,19 +137,7 @@ export default function ArqueoPanel({ onClose, openPanel }) {
   };
   const fmt = (n) => Math.round(n).toLocaleString('es-CL');
 
-  const groupByRider = (orders) => {
-    const groups = {};
-    orders.forEach(o => {
-      const key = o.rider_id || 0;
-      if (!groups[key]) {
-        groups[key] = { rider_id: key, rider_name: o.rider_nombre || 'Sin asignar', orders: [], total_fees: 0 };
-      }
-      groups[key].orders.push(o);
-      const fee = parseFloat(o.delivery_fee) + parseFloat(o.card_surcharge || 0);
-      groups[key].total_fees += fee;
-    });
-    return Object.values(groups);
-  };
+  const totalFee = (o) => parseFloat(o.delivery_fee) + parseFloat(o.card_surcharge || 0);
 
   if (initialLoading) {
     return (
@@ -290,60 +252,58 @@ export default function ArqueoPanel({ onClose, openPanel }) {
               <div className="dm-load">Cargando pedidos...</div>
             ) : (
               <div className="dm-b">
-                {groupByRider(deliveryOrders).map((group) => {
-                  const rider = riders.find(r => parseInt(r.rider_id) === group.rider_id);
+                {deliveryOrders.map((o) => {
+                  const fee = totalFee(o);
+                  const paid = parseInt(o.is_paid) === 1;
                   return (
-                    <div key={group.rider_id} className={`dg ${rider && parseInt(rider.todos_pagados) === 1 ? 'dg-paid' : ''}`}>
-                      <div className="dg-h">
-                        <div className="dg-hl">
-                          <span className="dg-n">{group.rider_name}</span>
-                          <span className={rider && parseInt(rider.todos_pagados) === 1 ? 'st-p' : 'st-pen'}>
-                            {rider && parseInt(rider.todos_pagados) === 1 ? 'Pagado' : 'Pendiente'}
-                          </span>
+                    <div key={o.id} className={`do-card ${paid ? 'do-paid' : ''}`}>
+                      <div className="do-h">
+                        <span className="do-n">{o.order_number}</span>
+                        <span className="do-hr">{o.hora}</span>
+                        {paid && <span className="do-badge">Pagado</span>}
+                      </div>
+                      {o.customer_name && <div className="do-c">
+                        <span>{o.customer_name}</span>
+                        {o.customer_phone && <a href={`tel:${o.customer_phone}`} className="do-tel"><Phone size={10} /> {o.customer_phone}</a>}
+                      </div>}
+                      {o.delivery_address && <div className="do-ad">{o.delivery_address}</div>}
+                      <div className="do-rider">
+                        <Bike size={11} />
+                        {o.rider_nombre ? <span>{o.rider_nombre}</span> : <span className="do-sin">Sin asignar</span>}
+                        <span className="do-monto">${fmt(fee)}</span>
+                      </div>
+                      {paid && o.comprobante_url && (
+                        <div className="do-comp">
+                          <a href={o.comprobante_url} target="_blank" className="do-comp-link">Ver comprobante</a>
                         </div>
-                        <span className="dg-t">${fmt(group.total_fees)}</span>
-                      </div>
-                      <div className="dg-ords">
-                        {group.orders.map(o => (
-                          <div key={o.id} className="do">
-                            <div className="do-h">
-                              <span className="do-n">{o.order_number}</span>
-                              <span className="do-hr">{o.hora}</span>
-                            </div>
-                            {o.customer_name && <div className="do-c">
-                              <span>{o.customer_name}</span>
-                              {o.customer_phone && <a href={`tel:${o.customer_phone}`} className="do-tel"><Phone size={10} /> {o.customer_phone}</a>}
-                            </div>}
-                            {o.delivery_address && <div className="do-ad">{o.delivery_address}</div>}
-                            <div className="do-f">Delivery ${fmt(o.delivery_fee)}{parseFloat(o.card_surcharge || 0) > 0 && ` (+$${fmt(o.card_surcharge)} 💳)`}</div>
-                            {!group.rider_id && (
-                              <div className="do-asign">
-                                <select className="do-sel" defaultValue="" onChange={e => e.target.value && assignRider(o.id, e.target.value)} disabled={assigningId === o.id}>
-                                  <option value="">Asignar rider...</option>
-                                  {allRiders.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
-                                </select>
-                                {assigningId === o.id && <Loader2 size={12} className="spin" />}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                      {(!rider || parseInt(rider.todos_pagados) !== 1) && (
-                        <div className="dg-acts">
-                          <select className="dg-met" value={metodoPago[group.rider_id] || 'transferencia'} onChange={e => setMetodoPago({ ...metodoPago, [group.rider_id]: e.target.value })}>
+                      )}
+                      {!paid && !o.rider_id ? (
+                        <div className="do-asign">
+                          <select className="do-sel" defaultValue="" onChange={e => e.target.value && assignRider(o.id, e.target.value)} disabled={assigningId === o.id}>
+                            <option value="">Asignar rider...</option>
+                            {allRiders.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
+                          </select>
+                          {assigningId === o.id && <Loader2 size={12} className="spin" />}
+                        </div>
+                      ) : null}
+                      {!paid && o.rider_id ? (
+                        <div className="do-acts">
+                          <select className="dg-met" value={metodoPago[o.id] || 'transferencia'} onChange={e => setMetodoPago({ ...metodoPago, [o.id]: e.target.value })}>
                             <option value="transferencia">Transferencia</option>
                             <option value="efectivo">Efectivo</option>
                           </select>
-                          <label className={`dg-btn up ${uploadingId === group.rider_id ? 'dis' : ''}`}>
-                            {uploadingId === group.rider_id ? <Loader2 size={12} className="spin" /> : <Upload size={12} />}
+                          <label className={`dg-btn up ${uploadingId === o.id ? 'dis' : ''}`}>
+                            {uploadingId === o.id ? <Loader2 size={12} className="spin" /> : <Upload size={12} />}
                             Subir comprobante
-                            <input type="file" className="hidden" accept="image/*" disabled={uploadingId === group.rider_id} onChange={e => handlePayRider(group.rider_id || 0, e)} />
+                            <input type="file" className="hidden" accept="image/*" disabled={uploadingId === o.id} onChange={e => { const file = e.target.files?.[0]; if (!file) return; e.target.value = ''; payOrder(o, file); }} />
                           </label>
-                          <button className="dg-btn pay" onClick={() => handlePayNoFile(group.rider_id || 0, group.rider_name)} disabled={uploadingId === group.rider_id}>Pagar</button>
+                          <button className="dg-btn pay" onClick={() => payOrder(o, null)} disabled={uploadingId === o.id}>Pagar</button>
                         </div>
-                      )}
-                      {rider && parseInt(rider.todos_pagados) === 1 && rider.token && (
-                        <button className="dg-btn share" onClick={() => sharePayment(rider)}><Share2 size={12} /> Compartir detalle de pago</button>
+                      ) : null}
+                      {paid && (
+                        <div className="do-share">
+                          <button className="dg-btn shr" onClick={() => sharePayment(o.id)}><Share2 size={12} /> Compartir detalle de pago</button>
+                        </div>
                       )}
                     </div>
                   );
@@ -402,36 +362,32 @@ export default function ArqueoPanel({ onClose, openPanel }) {
         .dm-x{background:none;border:none;color:#9ca3af;cursor:pointer;padding:4px}
         .dm-x:hover{color:#374151}
         .dm-load{padding:24px;text-align:center;font-size:13px;color:#9ca3af}
-        .dm-b{padding:8px}
-        .dg{border:1px solid #e5e7eb;border-radius:10px;margin-bottom:8px;overflow:hidden}
-        .dg-paid{opacity:.65;background:#f9fafb}
-        .dg-h{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#f9fafb;border-bottom:1px solid #e5e7eb}
-        .dg-hl{display:flex;align-items:center;gap:6px}
-        .dg-n{font-size:13px;font-weight:700;color:#374151}
-        .dg-t{font-size:16px;font-weight:800;color:#111827}
-        .st-p,.st-pen{font-size:9px;padding:1px 5px;border-radius:3px;font-weight:600}
-        .st-p{background:#d1fae5;color:#059669}
-        .st-pen{background:#fef3c7;color:#d97706}
-        .dg-ords{padding:6px 12px}
-        .do{padding:6px 0;border-bottom:1px solid #f3f4f6}
-        .do:last-child{border-bottom:none}
-        .do-h{display:flex;justify-content:space-between;font-size:10px;color:#6b7280;margin-bottom:1px}
-        .do-n{font-weight:600;color:#374151}
-        .do-hr{color:#9ca3af}
-        .do-c{font-size:11px;color:#374151;display:flex;gap:6px;align-items:center;margin-bottom:1px}
+        .dm-b{padding:8px;display:flex;flex-direction:column;gap:8px}
+        .do-card{border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;background:white}
+        .do-paid{opacity:.65;background:#f9fafb}
+        .do-h{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#f9fafb;border-bottom:1px solid #e5e7eb;gap:6px}
+        .do-n{font-size:10px;font-weight:700;color:#374151}
+        .do-hr{font-size:9px;color:#9ca3af;margin-left:auto}
+        .do-badge{font-size:8px;background:#d1fae5;color:#059669;padding:1px 5px;border-radius:3px;font-weight:700}
+        .do-c{padding:4px 10px;font-size:11px;color:#374151;display:flex;gap:6px;align-items:center}
         .do-tel{color:#3b82f6;text-decoration:none;display:inline-flex;align-items:center;gap:2px}
-        .do-ad{font-size:10px;color:#6b7280;margin-bottom:2px}
-        .do-f{font-size:11px;font-weight:600;color:#059669;margin-bottom:4px}
-        .do-asign{display:flex;align-items:center;gap:6px}
+        .do-ad{padding:0 10px 4px;font-size:10px;color:#6b7280}
+        .do-rider{display:flex;align-items:center;gap:6px;padding:4px 10px;border-top:1px solid #f3f4f6;font-size:11px;color:#374151}
+        .do-sin{color:#9ca3af;font-style:italic}
+        .do-monto{margin-left:auto;font-size:14px;font-weight:800;color:#059669}
+        .do-comp{padding:4px 10px 6px;border-top:1px solid #f3f4f6}
+        .do-comp-link{font-size:10px;color:#3b82f6;text-decoration:underline}
+        .do-asign{display:flex;align-items:center;gap:6px;padding:6px 10px;border-top:1px solid #f3f4f6}
         .do-sel{flex:1;font-size:10px;padding:4px 6px;border:1px solid #d1d5db;border-radius:5px;background:white;color:#374151;outline:none}
-        .dg-acts{display:flex;align-items:center;gap:6px;padding:8px 12px;border-top:1px solid #e5e7eb;flex-wrap:wrap}
+        .do-acts{display:flex;align-items:center;gap:6px;padding:6px 10px;border-top:1px solid #f3f4f6;flex-wrap:wrap}
+        .do-share{padding:6px 10px;border-top:1px solid #f3f4f6}
         .dg-met{font-size:10px;padding:4px 6px;border:1px solid #d1d5db;border-radius:5px;background:white;color:#374151;outline:none}
         .dg-btn{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border:none;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;transition:all .15s}
         .dg-btn.up{background:#fef3c7;color:#d97706}.dg-btn.up:hover{background:#fde68a}
         .dg-btn.pay{background:#dbeafe;color:#2563eb}.dg-btn.pay:hover{background:#bfdbfe}
         .dg-btn.pay:disabled,.dis{opacity:.5;cursor:not-allowed;pointer-events:none}
-        .dg-btn.share{background:#f3e8ff;color:#7c3aed;margin:8px 12px;width:calc(100% - 24px);justify-content:center}
-        .dg-btn.share:hover{background:#e9d5ff}
+        .dg-btn.shr{background:#f3e8ff;color:#7c3aed;width:100%;justify-content:center}
+        .dg-btn.shr:hover{background:#e9d5ff}
         .dm-empty{padding:32px;text-align:center;font-size:13px;color:#9ca3af}
         .hidden{display:none}
         .spin{animation:spin 1s linear infinite}

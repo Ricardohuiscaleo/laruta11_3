@@ -4,11 +4,32 @@ foreach ([__DIR__ . '/api/config.php', __DIR__ . '/config.php', __DIR__ . '/publ
     if (file_exists($p)) { $config = require $p; break; }
 }
 
+$orderId = isset($_GET['order_id']) ? intval($_GET['order_id']) : 0;
 $token = $_GET['token'] ?? '';
 $pagos = [];
 $error = null;
 
-if ($token && $config) {
+if ($orderId && $config) {
+    try {
+        $pdo = new PDO(
+            "mysql:host={$config['app_db_host']};dbname={$config['app_db_name']};charset=utf8mb4",
+            $config['app_db_user'], $config['app_db_pass'],
+            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+        );
+        $stmt = $pdo->prepare("
+            SELECT rp.*, r.nombre as rider_nombre,
+                   o.order_number, o.delivery_address, o.delivery_fee, o.card_surcharge
+            FROM rider_pagos rp
+            JOIN riders r ON rp.rider_id = r.id
+            LEFT JOIN tuu_orders o ON rp.order_id = o.id
+            WHERE rp.order_id = ?
+            ORDER BY rp.id DESC
+        ");
+        $stmt->execute([$orderId]);
+        $pagos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($pagos)) { $error = 'Pago no encontrado'; }
+    } catch (Exception $e) { $error = 'Error al cargar datos'; }
+} elseif ($token && $config) {
     try {
         $pdo = new PDO(
             "mysql:host={$config['app_db_host']};dbname={$config['app_db_name']};charset=utf8mb4",

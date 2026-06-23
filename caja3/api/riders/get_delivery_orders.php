@@ -39,9 +39,14 @@ try {
                 o.rider_id,
                 COALESCE(r.nombre, NULL) as rider_nombre,
                 o.dispatch_photo_url,
-                DATE_FORMAT(DATE_SUB(o.created_at, INTERVAL 3 HOUR), '%H:%i') as hora
+                DATE_FORMAT(DATE_SUB(o.created_at, INTERVAL 3 HOUR), '%H:%i') as hora,
+                CASE WHEN rp.id IS NOT NULL THEN 1 ELSE 0 END as is_paid,
+                rp.token,
+                rp.comprobante_url,
+                rp.metodo_pago
             FROM tuu_orders o
             LEFT JOIN riders r ON o.rider_id = r.id
+            LEFT JOIN rider_pagos rp ON rp.order_id = o.id AND rp.estado = 'pagado'
             WHERE COALESCE(o.scheduled_time, o.created_at) >= ?
               AND COALESCE(o.scheduled_time, o.created_at) < ?
               AND o.payment_status = 'paid'

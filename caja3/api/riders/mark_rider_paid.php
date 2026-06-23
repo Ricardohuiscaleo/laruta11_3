@@ -18,34 +18,53 @@ try {
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
 
+    $orderId = isset($_POST['order_id']) ? intval($_POST['order_id']) : 0;
     $riderId = isset($_POST['rider_id']) ? intval($_POST['rider_id']) : 0;
-    $metodoPago = $_POST['metodo_pago'] ?? 'transferencia'; // transferencia | efectivo
+    $metodoPago = $_POST['metodo_pago'] ?? 'transferencia';
     $startDate = $_POST['start_date'] ?? '';
     $endDate = $_POST['end_date'] ?? '';
 
-    if (!$riderId || !$startDate || !$endDate) {
-        throw new Exception('rider_id, start_date y end_date requeridos');
+    if (!$orderId && (!$riderId || !$startDate || !$endDate)) {
+        throw new Exception('order_id requerido, o rider_id + fechas');
     }
 
-    // Get unpaid delivered orders for this rider in the period
-    $stmt = $pdo->prepare("
-        SELECT o.id, o.order_number, o.delivery_fee, o.delivered_at
-        FROM tuu_orders o
-        WHERE o.rider_id = ?
-          AND COALESCE(o.scheduled_time, o.created_at) >= ?
-          AND COALESCE(o.scheduled_time, o.created_at) < ?
-          AND o.payment_status = 'paid'
-          AND o.delivery_fee > 0
-          AND o.id NOT IN (
-              SELECT order_id FROM rider_pagos WHERE order_id IS NOT NULL AND estado = 'pagado'
-          )
-        ORDER BY o.delivered_at ASC
-    ");
-    $stmt->execute([$riderId, $startDate, $endDate]);
-    $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    if ($orderId) {
+        // Pay single order
+        $stmt = $pdo->prepare("
+            SELECT o.id, o.order_number, o.delivery_fee, o.card_surcharge, o.rider_id, o.delivered_at
+            FROM tuu_orders o
+            WHERE o.id = ?
+              AND o.payment_status = 'paid'
+              AND o.id NOT IN (
+                  SELECT order_id FROM rider_pagos WHERE order_id IS NOT NULL AND estado = 'pagado'
+              )
+        ");
+        $stmt->execute([$orderId]);
+        $order = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$order) throw new Exception('Orden no encontrada o ya pagada');
+        $orders = [$order];
+        $riderId = intval($order['rider_id']);
+    } else {
+        // Pay all pending for rider
+        $stmt = $pdo->prepare("
+            SELECT o.id, o.order_number, o.delivery_fee, o.card_surcharge, o.rider_id, o.delivered_at
+            FROM tuu_orders o
+            WHERE o.rider_id = ?
+              AND COALESCE(o.scheduled_time, o.created_at) >= ?
+              AND COALESCE(o.scheduled_time, o.created_at) < ?
+              AND o.payment_status = 'paid'
+              AND o.delivery_fee > 0
+              AND o.id NOT IN (
+                  SELECT order_id FROM rider_pagos WHERE order_id IS NOT NULL AND estado = 'pagado'
+              )
+            ORDER BY o.delivered_at ASC
+        ");
+        $stmt->execute([$riderId, $startDate, $endDate]);
+        $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 
     if (empty($orders)) {
-        echo json_encode(['success' => true, 'message' => 'No hay pedidos pendientes para este rider', 'count' => 0]);
+        echo json_encode(['success' => true, 'message' => 'No hay pedidos pendientes', 'count' => 0]);
         exit;
     }
 
@@ -54,17 +73,14 @@ try {
     if (isset($_FILES['comprobante']) && $_FILES['comprobante']['error'] === UPLOAD_ERR_OK) {
         $uploadDir = __DIR__ . '/../../uploads/comprobantes/';
         if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
-        
         $ext = strtolower(pathinfo($_FILES['comprobante']['name'], PATHINFO_EXTENSION));
         $filename = 'rider_' . $riderId . '_' . time() . '.' . $ext;
         move_uploaded_file($_FILES['comprobante']['tmp_name'], $uploadDir . $filename);
         $comprobanteUrl = '/uploads/comprobantes/' . $filename;
     }
 
-    // Generate a unique token for this payment batch
     $token = bin2hex(random_bytes(16));
 
-    // Insert rider_pagos for each order
     $insertStmt = $pdo->prepare("
         INSERT INTO rider_pagos (rider_id, order_id, monto, fecha, estado, comprobante_url, metodo_pago, token, pagado_en)
         VALUES (?, ?, ?, CURDATE(), 'pagado', ?, ?, ?, NOW())
@@ -72,15 +88,16 @@ try {
 
     $totalPaid = 0;
     foreach ($orders as $order) {
+        $monto = floatval($order['delivery_fee']) + floatval($order['card_surcharge'] ?? 0);
         $insertStmt->execute([
-            $riderId,
+            $riderId ?: $order['rider_id'],
             $order['id'],
-            $order['delivery_fee'],
+            $monto,
             $comprobanteUrl,
             $metodoPago,
             $token,
         ]);
-        $totalPaid += floatval($order['delivery_fee']);
+        $totalPaid += $monto;
     }
 
     echo json_encode([
