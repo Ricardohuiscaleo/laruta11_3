@@ -201,43 +201,54 @@ export default function SaldoCajaModal({ isOpen, onClose }) {
           left: 0;
           width: 100%;
           height: 100%;
-          background: rgba(0, 0, 0, 0.5);
+          background: white;
           z-index: 1000;
-          align-items: center;
-          justify-content: center;
+          flex-direction: column;
+          overflow: hidden;
         }
         .modal.active {
           display: flex;
         }
         .modal-content {
-          background: white;
-          border-radius: 16px;
-          padding: 24px;
-          max-width: 500px;
-          width: 90%;
-          max-height: 90vh;
-          overflow: hidden;
+          flex: 1;
+          overflow-y: auto;
+          padding: 16px;
           display: flex;
           flex-direction: column;
+          padding-bottom: max(16px,env(safe-area-inset-bottom));
         }
         .modal-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 20px;
+          padding: 10px 12px;
+          background: linear-gradient(to right, #10b981, #059669);
+          margin: -16px -16px 16px -16px;
+          padding-left: 16px;
+          padding-right: 16px;
+          padding-top: max(0.75rem, env(safe-area-inset-top));
+          flex-shrink: 0;
         }
         .modal-title {
-          font-size: 20px;
-          font-weight: bold;
+          font-size: 18px;
+          font-weight: 700;
+          color: white;
         }
         .close-btn {
-          background: #f3f4f6;
+          background: rgba(255,255,255,0.2);
           border: none;
           width: 32px;
           height: 32px;
-          border-radius: 50%;
+          border-radius: 6px;
           cursor: pointer;
           font-size: 20px;
+          color: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .close-btn:hover {
+          background: rgba(255,255,255,0.3);
         }
         .tabs {
           display: flex;

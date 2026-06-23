@@ -420,14 +420,14 @@ export default function ArqueoPanel({ onClose, openPanel }) {
         .bt-det{background:#8b5cf6;color:white;margin-bottom:4px}
         .bt-det:hover{background:#7c3aed}
         /* delivery modal */
-        .dm-over{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:1000;overflow-y:auto;padding:16px}
-        .dm{max-width:520px;margin:0 auto;background:white;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.2);overflow:hidden}
-        .dm-h{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #e5e7eb;position:sticky;top:0;background:white;z-index:2}
-        .dm-h h3{font-size:14px;display:flex;align-items:center;gap:6px;color:#374151;margin:0}
-        .dm-x{background:none;border:none;color:#9ca3af;cursor:pointer;padding:4px}
-        .dm-x:hover{color:#374151}
+        .dm-over{position:fixed;top:0;left:0;right:0;bottom:0;background:white;z-index:1000;display:flex;flex-direction:column;overflow:hidden}
+        .dm{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+        .dm-h{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:linear-gradient(to right,#ef4444,#f97316);flex-shrink:0;padding-top:max(0.75rem,env(safe-area-inset-top))}
+        .dm-h h3{font-size:18px;display:flex;align-items:center;gap:6px;color:white;margin:0}
+        .dm-x{background:none;border:none;cursor:pointer;padding:6px;border-radius:6px;color:white;display:flex;align-items:center;justify-content:center}
+        .dm-x:hover{background:rgba(255,255,255,0.2);color:white}
         .dm-load{padding:24px;text-align:center;font-size:13px;color:#9ca3af}
-        .dm-b{padding:8px;display:flex;flex-direction:column;gap:8px}
+        .dm-b{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:8px;padding-bottom:max(8px,env(safe-area-inset-bottom))}
         .gr{border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;background:white}
         .gr-paid{opacity:.7;background:#f9fafb}
         .gr-h{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#f3f4f6;border-bottom:1px solid #e5e7eb}
