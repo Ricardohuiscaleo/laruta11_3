@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CreditCard, Building2, Banknote, Smartphone, Bike, TrendingUp, Pencil, ChevronLeft, ChevronRight, BarChart3, Clock, Wallet, Moon, Calendar, BadgeDollarSign, X, ChevronRight, Upload, CheckCircle, Share2, Loader2, Phone } from 'lucide-react';
+import { CreditCard, Building2, Banknote, Smartphone, Bike, TrendingUp, Pencil, ChevronLeft, ChevronRight, BarChart3, Clock, Wallet, Moon, Calendar, BadgeDollarSign, X, Upload, CheckCircle, Share2, Loader2, Phone } from 'lucide-react';
 import SaldoCajaModal from './modals/SaldoCajaModal.jsx';
 
 export default function ArqueoPanel({ onClose, openPanel }) {
