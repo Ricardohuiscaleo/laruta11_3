@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CreditCard, Building2, Banknote, Smartphone, Bike, TrendingUp, Pencil, ChevronLeft, ChevronRight, BarChart3, ArrowLeft, Clock, Wallet, Moon, Calendar, BadgeDollarSign } from 'lucide-react';
+import { CreditCard, Building2, Banknote, Smartphone, Bike, TrendingUp, Pencil, ChevronLeft, ChevronRight, BarChart3, ArrowLeft, Clock, Wallet, Moon, Calendar, BadgeDollarSign, ChevronDown, ChevronUp, Upload, CheckCircle, Share2, Loader2 } from 'lucide-react';
 
 export default function ArqueoApp() {
   const [salesData, setSalesData] = useState(null);
@@ -9,6 +9,9 @@ export default function ArqueoApp() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
+  const [deliveryExpanded, setDeliveryExpanded] = useState(false);
+  const [uploadingRider, setUploadingRider] = useState(null);
+  const [metodoPago, setMetodoPago] = useState({});
 
   useEffect(() => {
     loadSalesData();
@@ -48,6 +51,71 @@ export default function ArqueoApp() {
   };
   const fmt = (n) => Math.round(n).toLocaleString('es-CL');
 
+  const handlePayRider = async (riderId, e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+
+    setUploadingRider(riderId);
+    try {
+      const fd = new FormData();
+      fd.append('rider_id', riderId);
+      fd.append('comprobante', file);
+      fd.append('metodo_pago', metodoPago[riderId] || 'transferencia');
+      fd.append('start_date', salesData.period.start);
+      fd.append('end_date', salesData.period.end);
+
+      const res = await (await fetch('/api/riders/mark_rider_paid.php', { method: 'POST', body: fd })).json();
+      if (res.success) {
+        await loadSalesData(currentDaysAgo);
+      } else {
+        alert('Error: ' + (res.error || 'desconocido'));
+      }
+    } catch (err) {
+      alert('Error al conectar con el servidor');
+    } finally {
+      setUploadingRider(null);
+    }
+  };
+
+  const handlePayNoFile = async (riderId) => {
+    setUploadingRider(riderId);
+    try {
+      const fd = new FormData();
+      fd.append('rider_id', riderId);
+      fd.append('metodo_pago', metodoPago[riderId] || 'transferencia');
+      fd.append('start_date', salesData.period.start);
+      fd.append('end_date', salesData.period.end);
+
+      const res = await (await fetch('/api/riders/mark_rider_paid.php', { method: 'POST', body: fd })).json();
+      if (res.success) {
+        await loadSalesData(currentDaysAgo);
+      } else {
+        alert('Error: ' + (res.error || 'desconocido'));
+      }
+    } catch (err) {
+      alert('Error al conectar con el servidor');
+    } finally {
+      setUploadingRider(null);
+    }
+  };
+
+  const sharePayment = async (riderId) => {
+    if (!salesData?.rider_details) return;
+    const rider = salesData.rider_details.find(r => parseInt(r.rider_id) === riderId);
+    if (!rider) return;
+    // If already paid, rider will have a token from the mark_rider_paid response
+    // We store tokens in a simple way
+    const token = `rider-${riderId}-${Math.random().toString(36).slice(2, 10)}`;
+    const url = `${window.location.origin}/pago-rider/${token}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      alert('Link copiado al portapapeles');
+    } catch {
+      prompt('Comparte este link:', url);
+    }
+  };
+
   if (initialLoading) {
     return (
       <div style={{ maxWidth: 600, margin: '0 auto', padding: 4 }}>
@@ -67,6 +135,7 @@ export default function ArqueoApp() {
   const deliveryExtras = salesData.delivery_extras || 0;
   const totalRuta11 = salesData.total_general - deliveryTotal - deliveryExtras;
   const label = currentDaysAgo === 0 ? 'Turno Actual' : `Hace ${currentDaysAgo}d`;
+  const riders = salesData.rider_details || [];
 
   const rows = [
     { icon: <CreditCard size={14} />, label: 'Tarjetas', ...s.card },
@@ -77,7 +146,7 @@ export default function ArqueoApp() {
     { icon: <Banknote size={14} />, label: 'PedidosYA Efectivo', ...(s.pedidosya_cash || { count: 0, total: 0 }) },
     { icon: <BadgeDollarSign size={14} />, label: 'Crédito RL6', ...s.rl6_credit },
     { icon: <BadgeDollarSign size={14} />, label: 'Crédito R11', ...s.r11_credit },
-    { icon: <Bike size={14} />, label: 'Delivery', count: deliveryCount, total: deliveryTotal },
+    { icon: <Bike size={14} />, label: 'Delivery', count: deliveryCount, total: deliveryTotal, isDelivery: true },
   ];
 
   return (
@@ -97,10 +166,93 @@ export default function ArqueoApp() {
           <span className="th-t">Total</span>
         </div>
         {rows.map((r, i) => (
-          <div key={i} className={`tr ${r.cls || ''}`}>
-            <div className="td-m">{r.icon}<span>{r.label}</span></div>
-            <div className="td-p">{r.count}</div>
-            <div className="td-t">${fmt(r.total)}</div>
+          <div key={i}>
+            <div
+              className={`tr ${r.cls || ''} ${r.isDelivery ? 'tr-del' : ''}`}
+              onClick={() => r.isDelivery && setDeliveryExpanded(!deliveryExpanded)}
+              style={r.isDelivery ? { cursor: 'pointer' } : {}}
+            >
+              <div className="td-m">
+                {r.icon}
+                <span>{r.label}</span>
+                {r.isDelivery && (
+                  <span className="del-ch">
+                    {deliveryExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                  </span>
+                )}
+              </div>
+              <div className="td-p">{r.count}</div>
+              <div className="td-t">${fmt(r.total)}</div>
+            </div>
+            {r.isDelivery && deliveryExpanded && (
+              <div className="del-sub">
+                {riders.length === 0 && (
+                  <div className="del-empty">Sin repartidores en este turno</div>
+                )}
+                {riders.map((rider) => {
+                  const paid = parseInt(rider.todos_pagados) === 1;
+                  return (
+                    <div key={rider.rider_id || 'sin'} className={`del-rider ${paid ? 'del-paid' : ''}`}>
+                      <div className="del-rider-h">
+                        <span className="del-rider-n">{rider.rider_nombre}</span>
+                        {paid && <CheckCircle size={12} className="del-paid-icon" />}
+                        <span className={`del-rider-s ${paid ? 'del-s-paid' : 'del-s-pen'}`}>
+                          {paid ? 'Pagado' : 'Pendiente'}
+                        </span>
+                      </div>
+                      <div className="del-rider-b">
+                        <span className="del-rider-o">{rider.order_count} pedidos</span>
+                        <span className="del-rider-t">${fmt(rider.total_fees)}</span>
+                      </div>
+                      {!paid && (
+                        <div className="del-rider-actions">
+                          <select
+                            className="del-metodo"
+                            value={metodoPago[rider.rider_id] || 'transferencia'}
+                            onChange={(e) => setMetodoPago({ ...metodoPago, [rider.rider_id]: e.target.value })}
+                          >
+                            <option value="transferencia">Transferencia</option>
+                            <option value="efectivo">Efectivo</option>
+                          </select>
+                          <div className="del-btn-g">
+                            <label className={`del-btn del-btn-up ${uploadingRider === parseInt(rider.rider_id) ? 'del-btn-dis' : ''}`}>
+                              {uploadingRider === parseInt(rider.rider_id) ? (
+                                <Loader2 size={12} className="spin" />
+                              ) : (
+                                <Upload size={12} />
+                              )}
+                              Subir comprobante
+                              <input
+                                type="file"
+                                className="hidden"
+                                accept="image/*"
+                                disabled={uploadingRider === parseInt(rider.rider_id)}
+                                onChange={(e) => handlePayRider(parseInt(rider.rider_id), e)}
+                              />
+                            </label>
+                            <button
+                              className="del-btn del-btn-pay"
+                              onClick={() => handlePayNoFile(parseInt(rider.rider_id))}
+                              disabled={uploadingRider === parseInt(rider.rider_id)}
+                            >
+                              Pagar
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      {paid && (
+                        <button
+                          className="del-btn del-btn-share"
+                          onClick={() => sharePayment(parseInt(rider.rider_id))}
+                        >
+                          <Share2 size={12} /> Compartir detalle de pago
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         ))}
         {deliveryExtras > 0 && (
@@ -146,9 +298,41 @@ export default function ArqueoApp() {
         .th-m{flex:1}.th-p{width:50px;text-align:center}.th-t{width:90px;text-align:right}
         .tr{display:flex;align-items:center;padding:6px 10px;border-bottom:1px solid #f3f4f6}
         .tr:last-child{border-bottom:none}
+        .tr-del{background:#fffbeb}
+        .tr-del:hover{background:#fef3c7}
         .td-m{flex:1;display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#374151}
         .td-p{width:50px;text-align:center;font-size:12px;font-weight:600;color:#6b7280}
         .td-t{width:90px;text-align:right;font-size:13px;font-weight:700;color:#111827}
+        .del-ch{color:#d97706;margin-left:auto;display:flex;align-items:center}
+        .del-sub{background:#fefce8;border-bottom:2px solid #fde68a}
+        .del-empty{padding:12px;text-align:center;font-size:11px;color:#9ca3af}
+        .del-rider{padding:8px 10px 8px 24px;border-bottom:1px solid #fef9c3}
+        .del-rider:last-child{border-bottom:none}
+        .del-paid{opacity:.65}
+        .del-rider-h{display:flex;align-items:center;gap:6px;margin-bottom:2px}
+        .del-rider-n{font-size:12px;font-weight:700;color:#374151}
+        .del-paid-icon{color:#10b981}
+        .del-rider-s{font-size:9px;padding:1px 5px;border-radius:3px;font-weight:600}
+        .del-s-pen{background:#fef3c7;color:#d97706}
+        .del-s-paid{background:#d1fae5;color:#059669}
+        .del-rider-b{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+        .del-rider-o{font-size:10px;color:#6b7280}
+        .del-rider-t{font-size:13px;font-weight:800;color:#111827;margin-left:auto}
+        .del-rider-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+        .del-metodo{font-size:10px;padding:3px 5px;border:1px solid #d1d5db;border-radius:4px;background:white;color:#374151;outline:none}
+        .del-btn-g{display:flex;gap:4px;margin-left:auto}
+        .del-btn{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border:none;border-radius:5px;font-size:10px;font-weight:600;cursor:pointer;transition:all .15s}
+        .del-btn-up{background:#fef3c7;color:#d97706}
+        .del-btn-up:hover{background:#fde68a}
+        .del-btn-pay{background:#dbeafe;color:#2563eb}
+        .del-btn-pay:hover{background:#bfdbfe}
+        .del-btn-pay:disabled{opacity:.5;cursor:not-allowed}
+        .del-btn-dis{opacity:.5;cursor:not-allowed;pointer-events:none}
+        .del-btn-share{background:#f3e8ff;color:#7c3aed;width:100%;justify-content:center;margin-top:4px}
+        .del-btn-share:hover{background:#e9d5ff}
+        .hidden{display:none}
+        .spin{animation:spin 1s linear infinite}
+        @keyframes spin{100%{transform:rotate(360deg)}}
         .tc{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border-radius:10px;padding:10px 12px;margin-bottom:6px;box-shadow:0 2px 6px rgba(102,126,234,.3)}
         .tc-l{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:700;opacity:.9}
         .tc-r{text-align:right}
