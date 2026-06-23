@@ -982,18 +982,30 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
                     </span>
                   )}
                 </div>
-                {!order.rider_id && (
+                <div className="flex gap-1.5">
                   <select
                     value={selectedRider[order.id] || ''}
                     onChange={(e) => setSelectedRider(prev => ({ ...prev, [order.id]: parseInt(e.target.value) }))}
-                    className="w-full text-xs border border-gray-300 rounded px-2 py-1.5 bg-white focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none"
+                    className="flex-1 text-xs border border-gray-300 rounded px-2 py-1.5 bg-white focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none"
                   >
-                    <option value="">Seleccionar rider...</option>
+                    <option value="">Seleccionar...</option>
                     {riders.map(r => (
                       <option key={r.id} value={r.id}>{r.nombre}</option>
                     ))}
                   </select>
-                )}
+                  <button
+                    onClick={() => {
+                      const riderUrl = `https://mi.laruta11.cl/rider/${order.id}`;
+                      const delFee = parseInt(order.delivery_fee || 0);
+                      const msg = `🛵 *Delivery #${order.order_number}*\n\n💰 Delivery: $${delFee.toLocaleString('es-CL')}\n📍 ${order.delivery_address || 'Sin dirección'}${order.delivery_distance_km ? ` (${order.delivery_distance_km}km)` : ''}\n\n👉 Tomar pedido:\n${riderUrl}`;
+                      window.location.href = `whatsapp://send?text=${encodeURIComponent(msg)}`;
+                    }}
+                    className="flex items-center gap-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors flex-shrink-0"
+                  >
+                    <Send size={12} />
+                    Rider
+                  </button>
+                </div>
               </div>
               {/* Rider monitor chevron */}
               <button
