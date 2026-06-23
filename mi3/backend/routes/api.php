@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AiPromptController;
 use App\Http\Controllers\Admin\DeliveryConfigController;
 use App\Http\Controllers\Admin\DeliveryController;
 use App\Http\Controllers\Admin\SettlementController;
+use App\Http\Controllers\Admin\PagosDeliveryController;
 use App\Http\Controllers\Admin\VentasController;
 use App\Http\Controllers\Public\PublicRiderController;
 use App\Http\Controllers\Public\TrackingController;
@@ -331,6 +332,15 @@ Route::middleware(['auth:sanctum', 'worker', 'admin'])->prefix('v1/admin/deliver
     Route::get('/settlements/{id}', [SettlementController::class, 'show']);
     Route::post('/settlements/{id}/voucher', [SettlementController::class, 'uploadVoucher']);
     Route::post('/simulate', [\App\Http\Controllers\Admin\DeliveryController::class, 'simulate']);
+});
+
+// ── Pagos Delivery ──────────────────────────────────────────────────
+Route::middleware(['auth:sanctum', 'worker', 'admin'])->prefix('v1/admin/pagos-delivery')->group(function () {
+    Route::get('/settlements', [PagosDeliveryController::class, 'settlements']);
+    Route::get('/settlements/{id}', [PagosDeliveryController::class, 'show']);
+    Route::post('/settlements/{id}/voucher', [PagosDeliveryController::class, 'uploadVoucher']);
+    Route::post('/settlements/generate', [PagosDeliveryController::class, 'generate']);
+    Route::get('/history', [PagosDeliveryController::class, 'history']);
 });
 
 // ── Delivery Tracking — Rider ───────────────────────────────────────

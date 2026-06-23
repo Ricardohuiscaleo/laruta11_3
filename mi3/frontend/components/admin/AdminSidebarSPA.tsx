@@ -63,6 +63,7 @@ const sidebarGroups: SidebarGroup[] = [
       { key: 'recetas', label: 'Recetas', icon: ChefHat },
       { key: 'delivery', label: 'Delivery', icon: Truck },
       { key: 'delivery-config', label: 'Config', icon: Settings },
+      { key: 'pagos-delivery', label: 'Pagos Delivery', icon: DollarSign },
       { key: 'checklists', label: 'Checklists', icon: ClipboardCheck },
       { key: 'analisis', label: 'Análisis', icon: TrendingUp },
     ],
