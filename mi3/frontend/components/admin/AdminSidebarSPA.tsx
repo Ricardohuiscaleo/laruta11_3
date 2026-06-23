@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  Home, Users, Calendar, Receipt, SlidersHorizontal,
+  Home, Users, Calendar, Receipt, SlidersHorizontal, Eye,
   CreditCard, ArrowLeftRight, LogOut, Clock, Truck,
   Bell, Wallet, ShoppingCart, ClipboardCheck, ChevronLeft, ChevronRight,
   ChefHat, DollarSign, Settings, ChevronDown, TrendingUp,
@@ -63,7 +63,7 @@ const sidebarGroups: SidebarGroup[] = [
       { key: 'recetas', label: 'Recetas', icon: ChefHat },
       { key: 'delivery', label: 'Delivery', icon: Truck },
       { key: 'delivery-config', label: 'Config', icon: Settings },
-      { key: 'pagos-delivery', label: 'Pagos Delivery', icon: DollarSign },
+      { key: 'pagos-delivery', label: 'Pagos Rider', icon: DollarSign },
       { key: 'checklists', label: 'Checklists', icon: ClipboardCheck },
       { key: 'analisis', label: 'Análisis', icon: TrendingUp },
     ],
@@ -252,6 +252,19 @@ export default function AdminSidebarSPA({ activeSection, onSectionChange, badges
 
       <div className="border-t border-red-500 px-2 py-3 space-y-1">
         {!collapsed && <ViewSwitcher className="text-red-100 hover:bg-red-500/50 hover:text-white" />}
+        <a
+          href="https://mi.laruta11.cl"
+          target="_blank"
+          className={cn(
+            'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-200 transition-colors hover:bg-red-500/50 hover:text-white',
+            collapsed && 'justify-center px-0'
+          )}
+          aria-label={collapsed ? 'Vista Trabajador' : undefined}
+          title={collapsed ? 'Vista Trabajador' : undefined}
+        >
+          <Eye className="h-5 w-5 shrink-0" />
+          {!collapsed && 'Vista Trabajador'}
+        </a>
         <button
           type="button"
           onClick={logout}

@@ -57,7 +57,7 @@ const SECTION_TITLES: Record<SectionKey, string> = {
   capital: 'Capital de Trabajo',
   ventas: 'Ventas',
   analisis: 'Análisis',
-  'pagos-delivery': 'Pagos Delivery',
+  'pagos-delivery': 'Pagos Rider',
 };
 
 /* ─── Accent styles for tabs ─── */
