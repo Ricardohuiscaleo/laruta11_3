@@ -155,17 +155,19 @@ try {
                     COUNT(*) as order_count,
                     SUM(o.delivery_fee) as total_fees,
                     COALESCE(rp_paid.total_paid, 0) as total_pagado,
-                    CASE WHEN COUNT(*) = COALESCE(rp_paid.paid_count, 0) THEN 1 ELSE 0 END as todos_pagados
+                    CASE WHEN COUNT(*) = COALESCE(rp_paid.paid_count, 0) THEN 1 ELSE 0 END as todos_pagados,
+                    rp_paid.token
                  FROM tuu_orders o
                  LEFT JOIN riders r ON o.rider_id = r.id
-                 LEFT JOIN (
-                     SELECT rp2.rider_id, rp2.order_id,
-                            COUNT(*) as paid_count,
-                            SUM(rp2.monto) as total_paid
-                     FROM rider_pagos rp2
-                     WHERE rp2.estado = 'pagado'
-                     GROUP BY rp2.rider_id
-                 ) rp_paid ON rp_paid.rider_id = o.rider_id AND rp_paid.order_id = o.id
+                     LEFT JOIN (
+                         SELECT rp2.rider_id, rp2.order_id,
+                                COUNT(*) as paid_count,
+                                SUM(rp2.monto) as total_paid,
+                                GROUP_CONCAT(DISTINCT rp2.token SEPARATOR '') as token
+                         FROM rider_pagos rp2
+                         WHERE rp2.estado = 'pagado'
+                         GROUP BY rp2.rider_id
+                     ) rp_paid ON rp_paid.rider_id = o.rider_id AND rp_paid.order_id = o.id
                  WHERE COALESCE(o.scheduled_time, o.created_at) >= ? 
                    AND COALESCE(o.scheduled_time, o.created_at) < ?
                    AND o.payment_status = 'paid'

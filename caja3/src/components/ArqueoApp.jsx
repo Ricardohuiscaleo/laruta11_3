@@ -103,11 +103,8 @@ export default function ArqueoApp() {
   const sharePayment = async (riderId) => {
     if (!salesData?.rider_details) return;
     const rider = salesData.rider_details.find(r => parseInt(r.rider_id) === riderId);
-    if (!rider) return;
-    // If already paid, rider will have a token from the mark_rider_paid response
-    // We store tokens in a simple way
-    const token = `rider-${riderId}-${Math.random().toString(36).slice(2, 10)}`;
-    const url = `${window.location.origin}/pago-rider/${token}`;
+    if (!rider || !rider.token) return;
+    const url = `${window.location.origin}/pago-rider.php?token=${rider.token}`;
     try {
       await navigator.clipboard.writeText(url);
       alert('Link copiado al portapapeles');
