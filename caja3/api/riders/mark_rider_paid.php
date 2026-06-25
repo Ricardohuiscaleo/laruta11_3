@@ -31,7 +31,8 @@ try {
     if ($orderId) {
         // Pay single order
         $stmt = $pdo->prepare("
-            SELECT o.id, o.order_number, o.delivery_fee, o.card_surcharge, o.rider_id, o.delivered_at
+            SELECT o.id, o.order_number, o.delivery_fee, o.card_surcharge, o.rider_id,
+                   COALESCE(o.scheduled_time, o.created_at) AS delivery_time
             FROM tuu_orders o
             WHERE o.id = ?
               AND o.payment_status = 'paid'
@@ -47,7 +48,8 @@ try {
     } else {
         // Pay all pending for rider
         $stmt = $pdo->prepare("
-            SELECT o.id, o.order_number, o.delivery_fee, o.card_surcharge, o.rider_id, o.delivered_at
+            SELECT o.id, o.order_number, o.delivery_fee, o.card_surcharge, o.rider_id,
+                   COALESCE(o.scheduled_time, o.created_at) AS delivery_time
             FROM tuu_orders o
             WHERE o.rider_id = ?
               AND COALESCE(o.scheduled_time, o.created_at) >= ?
@@ -57,7 +59,7 @@ try {
               AND o.id NOT IN (
                   SELECT order_id FROM rider_pagos WHERE order_id IS NOT NULL AND estado = 'pagado'
               )
-            ORDER BY o.delivered_at ASC
+            ORDER BY delivery_time ASC
         ");
         $stmt->execute([$riderId, $startDate, $endDate]);
         $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -68,9 +70,11 @@ try {
         exit;
     }
 
-    // Handle comprobante upload
-    $comprobanteUrl = null;
-    if (isset($_FILES['comprobante']) && $_FILES['comprobante']['error'] === UPLOAD_ERR_OK) {
+    // Handle comprobante — prefer pre-uploaded R2 URL from frontend
+    $comprobanteUrl = $_POST['comprobante_url'] ?? null;
+
+    // Legacy fallback: direct file upload (deprecated, kept for compatibility)
+    if (!$comprobanteUrl && isset($_FILES['comprobante']) && $_FILES['comprobante']['error'] === UPLOAD_ERR_OK) {
         $uploadDir = __DIR__ . '/../../uploads/comprobantes/';
         if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
         $ext = strtolower(pathinfo($_FILES['comprobante']['name'], PATHINFO_EXTENSION));

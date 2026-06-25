@@ -89,15 +89,24 @@ export default function ArqueoApp() {
     }
   };
 
+  const uploadComprobante = async (file) => {
+    const fd = new FormData();
+    fd.append('comprobante', file);
+    const res = await (await fetch('/api/riders/upload_comprobante.php', { method: 'POST', body: fd })).json();
+    if (!res.success) throw new Error(res.error || 'Error subiendo comprobante');
+    return res.url;
+  };
+
   const handlePayRider = async (riderId, e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = '';
     setUploadingId(riderId);
     try {
+      const comprobanteUrl = await uploadComprobante(file);
       const fd = new FormData();
       fd.append('rider_id', riderId);
-      fd.append('comprobante', file);
+      fd.append('comprobante_url', comprobanteUrl);
       fd.append('metodo_pago', metodoPago[riderId] || 'transferencia');
       fd.append('start_date', salesData.period.start);
       fd.append('end_date', salesData.period.end);
@@ -109,7 +118,7 @@ export default function ArqueoApp() {
         alert('Error: ' + (res.error || 'desconocido'));
       }
     } catch (err) {
-      alert('Error al conectar con el servidor');
+      alert(err.message || 'Error al conectar con el servidor');
     } finally {
       setUploadingId(null);
     }

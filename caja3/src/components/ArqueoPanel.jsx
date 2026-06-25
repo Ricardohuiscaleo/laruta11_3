@@ -69,15 +69,24 @@ export default function ArqueoPanel({ onClose, openPanel }) {
     }
   };
 
+  const uploadComprobante = async (file) => {
+    const fd = new FormData();
+    fd.append('comprobante', file);
+    const res = await (await fetch('/api/riders/upload_comprobante.php', { method: 'POST', body: fd })).json();
+    if (!res.success) throw new Error(res.error || 'Error subiendo comprobante');
+    return res.url;
+  };
+
   const payOrders = async (orders, file) => {
     const riderId = orders[0]?.rider_id;
     if (!riderId) return;
     if (!file && !confirm(`Pagar a ${orders[0]?.rider_nombre || 'rider'} ($${fmt(orders.reduce((s, o) => s + totalFee(o), 0))})?`)) return;
     setUploadingId(riderId);
     try {
+      const comprobanteUrl = file ? await uploadComprobante(file) : '';
       const fd = new FormData();
       fd.append('rider_id', riderId);
-      if (file) fd.append('comprobante', file);
+      if (comprobanteUrl) fd.append('comprobante_url', comprobanteUrl);
       fd.append('metodo_pago', metodoPago[riderId] || 'transferencia');
       fd.append('start_date', salesData.period.start);
       fd.append('end_date', salesData.period.end);
@@ -89,7 +98,7 @@ export default function ArqueoPanel({ onClose, openPanel }) {
         alert('Error: ' + (res.error || 'desconocido'));
       }
     } catch (err) {
-      alert('Error al conectar con el servidor');
+      alert(err.message || 'Error al conectar con el servidor');
     } finally {
       setUploadingId(null);
     }
@@ -99,9 +108,10 @@ export default function ArqueoPanel({ onClose, openPanel }) {
     if (!file && !confirm(`Pagar ${order.order_number} ($${fmt(totalFee(order))})?`)) return;
     setUploadingId(order.id);
     try {
+      const comprobanteUrl = file ? await uploadComprobante(file) : '';
       const fd = new FormData();
       fd.append('order_id', order.id);
-      if (file) fd.append('comprobante', file);
+      if (comprobanteUrl) fd.append('comprobante_url', comprobanteUrl);
       fd.append('metodo_pago', metodoPago[order.id] || 'transferencia');
       fd.append('start_date', salesData.period.start);
       fd.append('end_date', salesData.period.end);
@@ -113,7 +123,7 @@ export default function ArqueoPanel({ onClose, openPanel }) {
         alert('Error: ' + (res.error || 'desconocido'));
       }
     } catch (err) {
-      alert('Error al conectar con el servidor');
+      alert(err.message || 'Error al conectar con el servidor');
     } finally {
       setUploadingId(null);
     }
