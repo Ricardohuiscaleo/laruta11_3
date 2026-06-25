@@ -48,6 +48,7 @@ RUN rm -rf /var/www/html/* && \
     cp admin2-htaccess /var/www/html/admin2/.htaccess && \
     cp load-env.php /var/www/html/ && \
     cp config.php /var/www/html/ && \
+    cp pago-rider.php /var/www/html/ && \
     cp ws-server.js /var/www/html/ && \
     cp package.json /var/www/html/ && \
     cp package-lock.json /var/www/html/
