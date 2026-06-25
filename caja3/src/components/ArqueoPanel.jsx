@@ -395,6 +395,7 @@ export default function ArqueoPanel({ onClose, openPanel }) {
                                 src={deliveryOrders.find(o => o.rider_id === group.rider_id && o.comprobante_url)?.comprobante_url}
                                 alt="Comprobante"
                                 className="gr-comprobante-thumb"
+                                onError={(e) => { e.target.style.display = 'none' }}
                                 onClick={() => setComprobanteModal({ url: deliveryOrders.find(o => o.rider_id === group.rider_id && o.comprobante_url)?.comprobante_url, name: group.rider_name })}
                               />
                             </div>
@@ -422,7 +423,7 @@ export default function ArqueoPanel({ onClose, openPanel }) {
               <span>{comprobanteModal.name}</span>
               <button onClick={() => setComprobanteModal(null)}><X size={20} /></button>
             </div>
-            <img src={comprobanteModal.url} alt="Comprobante de pago" className="comprobante-full" />
+            <img src={comprobanteModal.url} alt="Comprobante de pago" className="comprobante-full" onError={(e) => { e.target.style.display = 'none' }} />
           </div>
         </div>
       )}

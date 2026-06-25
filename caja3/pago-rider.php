@@ -27,6 +27,10 @@ if ($orderId && $config) {
         ");
         $stmt->execute([$orderId]);
         $pagos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($pagos as &$p) {
+            if (strpos($p['comprobante_url'] ?? '', '/uploads/') === 0) $p['comprobante_url'] = null;
+        }
+        unset($p);
         if (empty($pagos)) { $error = 'Pago no encontrado'; }
     } catch (Exception $e) { $error = 'Error al cargar datos'; }
 } elseif ($token && $config) {
@@ -50,6 +54,10 @@ if ($orderId && $config) {
         ");
         $stmt->execute([$token]);
         $pagos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($pagos as &$p) {
+            if (strpos($p['comprobante_url'] ?? '', '/uploads/') === 0) $p['comprobante_url'] = null;
+        }
+        unset($p);
         
         if (empty($pagos)) {
             $error = 'Pago no encontrado';
@@ -129,7 +137,7 @@ if ($orderId && $config) {
                 <?php if ($pago['comprobante_url']): ?>
                 <div class="card-divider">
                     <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:8px;">Comprobante</div>
-                    <img src="<?= htmlspecialchars($pago['comprobante_url']) ?>" alt="Comprobante de pago" class="card-img" loading="lazy" />
+                    <img src="<?= htmlspecialchars($pago['comprobante_url']) ?>" alt="Comprobante de pago" class="card-img" loading="lazy" onerror="this.style.display='none'" />
                 </div>
                 <?php endif; ?>
             </div>

@@ -378,6 +378,7 @@ export default function ArqueoApp() {
                                 src={deliveryOrders.find(o => o.rider_id === group.rider_id && o.comprobante_url)?.comprobante_url}
                                 alt="Comprobante"
                                 className="del-g-comprobante-thumb"
+                                onError={(e) => { e.target.style.display = 'none' }}
                                 onClick={() => setComprobanteModal({ url: deliveryOrders.find(o => o.rider_id === group.rider_id && o.comprobante_url)?.comprobante_url, name: group.rider_name })}
                               />
                             </div>
@@ -405,7 +406,7 @@ export default function ArqueoApp() {
           <div className="comprobante-overlay" onClick={e => e.stopPropagation()}>
             <button className="comprobante-close" onClick={() => setComprobanteModal(null)}><X size={20} /></button>
             <div className="comprobante-header">{comprobanteModal.name}</div>
-            <img src={comprobanteModal.url} alt="Comprobante de pago" className="comprobante-full" />
+            <img src={comprobanteModal.url} alt="Comprobante de pago" className="comprobante-full" onError={(e) => { e.target.style.display = 'none' }} />
           </div>
         </div>
       )}
