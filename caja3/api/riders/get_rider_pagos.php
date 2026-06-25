@@ -43,13 +43,13 @@ try {
     // Get pending deliveries (delivered orders without payment record)
     $pendingSql = "SELECT o.id, o.order_number, o.delivery_address, o.delivery_fee,
                           COALESCE(r.nombre, 'Sin asignar') as rider_nombre,
-                          o.rider_id, o.delivered_at
+                          o.rider_id, COALESCE(o.scheduled_time, o.created_at) as delivery_time
                    FROM tuu_orders o
                    LEFT JOIN riders r ON o.rider_id = r.id
                    WHERE o.order_status = 'delivered'
                    AND o.delivery_fee > 0
                    AND o.id NOT IN (SELECT order_id FROM rider_pagos WHERE order_id IS NOT NULL)
-                   ORDER BY o.delivered_at DESC";
+                   ORDER BY delivery_time DESC";
     $pendingStmt = $pdo->query($pendingSql);
     $pending = $pendingStmt->fetchAll(PDO::FETCH_ASSOC);
 
