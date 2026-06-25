@@ -19,6 +19,8 @@ export default function ArqueoPanel({ onClose, openPanel }) {
   const [uploadingId, setUploadingId] = useState(null);
   const [metodoPago, setMetodoPago] = useState({});
   const [editingRider, setEditingRider] = useState({});
+  const [comprobanteModal, setComprobanteModal] = useState(null);
+  const [reportModal, setReportModal] = useState(null);
 
   useEffect(() => {
     loadSalesData();
@@ -153,8 +155,11 @@ export default function ArqueoPanel({ onClose, openPanel }) {
     }
   };
 
-  const sharePayment = async (orderId) => {
-    const url = `${window.location.origin}/pago-rider.php?order_id=${orderId}`;
+  const sharePayment = async (groupId) => {
+    const group = groupByRider(deliveryOrders).find(g => g.rider_id === groupId);
+    const token = group?.orders.find(o => o.token)?.token;
+    if (!token) return alert('Token no disponible');
+    const url = `${window.location.origin}/pago-rider.php?token=${token}`;
     try {
       await navigator.clipboard.writeText(url);
       alert('Link copiado al portapapeles');
@@ -301,7 +306,10 @@ export default function ArqueoPanel({ onClose, openPanel }) {
           <div className="dm" onClick={e => e.stopPropagation()}>
             <div className="dm-h">
               <h3><Bike size={16} /> Delivery</h3>
-              <button className="dm-x" onClick={() => setShowModal(false)}><X size={16} /></button>
+              <div className="dm-h-acts">
+                {deliveryOrders.length > 0 && <button className="dm-report-btn" onClick={() => setReportModal(true)}>Reporte</button>}
+                <button className="dm-x" onClick={() => setShowModal(false)}><X size={16} /></button>
+              </div>
             </div>
             {loadingOrders ? (
               <div className="dm-load">Cargando pedidos...</div>
@@ -380,7 +388,18 @@ export default function ArqueoPanel({ onClose, openPanel }) {
 
                       {group.all_paid && (
                         <div className="gr-share">
-                          <button className="gr-btn shr" onClick={() => { const t = group.orders.find(o => o.token)?.token || group.rider_id; sharePayment(group.orders[0]?.id); }}>
+                          {deliveryOrders.find(o => o.rider_id === group.rider_id && o.comprobante_url) && (
+                            <div className="gr-comprobante-container">
+                              <span className="gr-comprobante-label">Comprobante</span>
+                              <img
+                                src={deliveryOrders.find(o => o.rider_id === group.rider_id && o.comprobante_url)?.comprobante_url}
+                                alt="Comprobante"
+                                className="gr-comprobante-thumb"
+                                onClick={() => setComprobanteModal({ url: deliveryOrders.find(o => o.rider_id === group.rider_id && o.comprobante_url)?.comprobante_url, name: group.rider_name })}
+                              />
+                            </div>
+                          )}
+                          <button className="gr-btn shr" onClick={() => { sharePayment(group.rider_id); }}>
                             <Share2 size={12} /> Compartir detalle de pago
                           </button>
                         </div>
@@ -391,6 +410,54 @@ export default function ArqueoPanel({ onClose, openPanel }) {
                 {deliveryOrders.length === 0 && <div className="dm-empty">Sin pedidos delivery en este turno</div>}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Comprobante Lightbox */}
+      {comprobanteModal && (
+        <div className="dm-over" onClick={() => setComprobanteModal(null)}>
+          <div className="comprobante-overlay" onClick={e => e.stopPropagation()}>
+            <div className="comprobante-top-bar">
+              <span>{comprobanteModal.name}</span>
+              <button onClick={() => setComprobanteModal(null)}><X size={20} /></button>
+            </div>
+            <img src={comprobanteModal.url} alt="Comprobante de pago" className="comprobante-full" />
+          </div>
+        </div>
+      )}
+
+      {/* Report Modal */}
+      {reportModal && (
+        <div className="dm-over" onClick={() => setReportModal(false)} style={{ zIndex: 1100 }}>
+          <div className="report-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 520, width: '100%' }}>
+            <div className="report-h">
+              <h3><Bike size={16} /> Reporte Delivery</h3>
+              <button onClick={() => setReportModal(false)}><X size={20} /></button>
+            </div>
+            <div className="report-body">
+              <div className="report-period">{salesData?.shift_date}</div>
+              <div className="report-summary">
+                <span>Total delivery: ${fmt(deliveryTotal)}</span>
+                <span>Pedidos: {deliveryCount}</span>
+              </div>
+              {groupByRider(deliveryOrders).map(g => (
+                <div key={g.rider_id} className="report-rider">
+                  <div className="report-rider-h">
+                    <strong>{g.rider_name}</strong>
+                    <span>${fmt(g.total_fees)}</span>
+                    <span className={`report-badge ${g.all_paid ? 'rbp' : 'rbpe'}`}>{g.all_paid ? 'Pagado' : 'Pendiente'}</span>
+                  </div>
+                  {g.orders.map(o => (
+                    <div key={o.id} className="report-order">
+                      <span>{o.order_number}</span>
+                      <span>{o.customer_name}</span>
+                      <span>${fmt(totalFee(o))}</span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -473,6 +540,36 @@ export default function ArqueoPanel({ onClose, openPanel }) {
         .gr-btn.pay:disabled,.dis{opacity:.5;cursor:not-allowed;pointer-events:none}
         .gr-btn.shr{background:#f3e8ff;color:#7c3aed;width:100%;justify-content:center}
         .gr-btn.shr:hover{background:#e9d5ff}
+        .gr-comprobante-container{padding:4px 12px;display:flex;align-items:center;gap:8px}
+        .gr-comprobante-label{font-size:9px;color:#6b7280;font-weight:600}
+        .gr-comprobante-thumb{width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid #e5e7eb;cursor:pointer;transition:transform .15s}
+        .gr-comprobante-thumb:hover{transform:scale(1.1);box-shadow:0 2px 8px rgba(0,0,0,.15)}
+        .dm-h-acts{display:flex;align-items:center;gap:6px}
+        .dm-report-btn{background:#f3e8ff;color:#7c3aed;border:none;border-radius:5px;padding:4px 8px;font-size:10px;font-weight:600;cursor:pointer}
+        .dm-report-btn:hover{background:#e9d5ff}
+        .comprobante-overlay{position:relative;max-width:90vw;max-height:90vh;display:flex;flex-direction:column;align-items:center;margin:auto}
+        .comprobante-top-bar{display:flex;justify-content:space-between;align-items:center;width:100%;padding:4px 0;color:white;font-size:14px;font-weight:700}
+        .comprobante-top-bar button{background:none;border:none;color:white;cursor:pointer}
+        .comprobante-full{max-width:100%;max-height:80vh;border-radius:8px;object-fit:contain}
+        .report-modal{background:white;border-radius:14px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 30px rgba(0,0,0,.3)}
+        .report-h{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:linear-gradient(to right,#ef4444,#f97316);flex-shrink:0;padding-top:max(0.75rem,env(safe-area-inset-top))}
+        .report-h h3{font-size:16px;display:flex;align-items:center;gap:6px;color:white;margin:0}
+        .report-h button{background:none;border:none;color:white;cursor:pointer;padding:4px}
+        .report-body{flex:1;overflow-y:auto;padding:12px 14px}
+        .report-period{font-size:13px;font-weight:700;color:#374151;margin-bottom:8px;text-align:center}
+        .report-summary{display:flex;justify-content:space-between;background:#f3f4f6;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:13px;font-weight:700;color:#374151}
+        .report-rider{border:1px solid #e5e7eb;border-radius:8px;margin-bottom:8px;overflow:hidden}
+        .report-rider-h{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#f9fafb;font-size:12px}
+        .report-rider-h strong{flex:1}
+        .report-rider-h span:last-child{margin-left:auto}
+        .report-badge{font-size:8px;padding:1px 5px;border-radius:3px;font-weight:700}
+        .rbp{background:#d1fae5;color:#059669}
+        .rbpe{background:#fef3c7;color:#d97706}
+        .report-order{display:flex;gap:8px;padding:4px 10px 4px 16px;font-size:10px;color:#6b7280;border-bottom:1px solid #f9fafb}
+        .report-order:last-child{border-bottom:none}
+        .report-order span:nth-child(1){min-width:120px;font-weight:600;color:#374151}
+        .report-order span:nth-child(2){flex:1}
+        .report-order span:nth-child(3){font-weight:700;color:#059669}
         .dm-empty{padding:32px;text-align:center;font-size:13px;color:#9ca3af}
         .hidden{display:none}
         .spin{animation:spin 1s linear infinite}
