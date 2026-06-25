@@ -149,6 +149,32 @@ export default function ArqueoApp() {
     }
   };
 
+  const handleReUploadComprobante = async (riderId, e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    setUploadingId(riderId);
+    try {
+      const url = await uploadComprobante(file);
+      const fd = new FormData();
+      fd.append('rider_id', riderId);
+      fd.append('comprobante_url', url);
+      fd.append('start_date', salesData.period.start);
+      fd.append('end_date', salesData.period.end);
+      const res = await (await fetch('/api/riders/update_comprobante.php', { method: 'POST', body: fd })).json();
+      if (res.success) {
+        await loadSalesData(currentDaysAgo);
+        await openDeliveryModal();
+      } else {
+        alert('Error: ' + (res.error || 'desconocido'));
+      }
+    } catch (err) {
+      alert(err.message || 'Error al subir comprobante');
+    } finally {
+      setUploadingId(null);
+    }
+  };
+
   const sharePayment = async (rider) => {
     if (!rider || !rider.token) return;
     const url = `${window.location.origin}/pago-rider.php?token=${rider.token}`;
@@ -371,7 +397,7 @@ export default function ArqueoApp() {
 
                       {isPaid && riderRiders?.token && (
                         <>
-                          {deliveryOrders.find(o => o.rider_id === group.rider_id && o.comprobante_url) && (
+                          {deliveryOrders.find(o => o.rider_id === group.rider_id && o.comprobante_url) ? (
                             <div className="del-g-comprobante-container">
                               <span className="del-g-comprobante-label">Comprobante</span>
                               <img
@@ -381,6 +407,15 @@ export default function ArqueoApp() {
                                 onError={(e) => { e.target.style.display = 'none' }}
                                 onClick={() => setComprobanteModal({ url: deliveryOrders.find(o => o.rider_id === group.rider_id && o.comprobante_url)?.comprobante_url, name: group.rider_name })}
                               />
+                            </div>
+                          ) : (
+                            <div className="del-g-comprobante-container">
+                              <span className="del-g-comprobante-label">Sin comprobante</span>
+                              <label className={`del-btn-up-sm ${uploadingId === group.rider_id ? 'del-btn-dis' : ''}`}>
+                                {uploadingId === group.rider_id ? <Loader2 size={12} className="spin" /> : <Upload size={12} />}
+                                Subir
+                                <input type="file" className="hidden" accept="image/*" disabled={uploadingId === group.rider_id} onChange={e => handleReUploadComprobante(group.rider_id, e)} />
+                              </label>
                             </div>
                           )}
                           <button className="del-btn del-btn-share" onClick={() => sharePayment(riderRiders)}>
@@ -507,6 +542,8 @@ export default function ArqueoApp() {
         .del-btn{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border:none;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;transition:all .15s}
         .del-btn-up{background:#fef3c7;color:#d97706}
         .del-btn-up:hover{background:#fde68a}
+        .del-btn-up-sm{display:inline-flex;align-items:center;gap:3px;padding:3px 7px;border:none;border-radius:4px;font-size:9px;font-weight:600;cursor:pointer;background:#fef3c7;color:#d97706}
+        .del-btn-up-sm:hover{background:#fde68a}
         .del-btn-pay{background:#dbeafe;color:#2563eb}
         .del-btn-pay:hover{background:#bfdbfe}
         .del-btn-pay:disabled{opacity:.5;cursor:not-allowed}

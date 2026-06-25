@@ -79,6 +79,32 @@ export default function ArqueoPanel({ onClose, openPanel }) {
     return res.url;
   };
 
+  const handleReUploadComprobante = async (riderId, e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    setUploadingId(riderId);
+    try {
+      const url = await uploadComprobante(file);
+      const fd = new FormData();
+      fd.append('rider_id', riderId);
+      fd.append('comprobante_url', url);
+      fd.append('start_date', salesData.period.start);
+      fd.append('end_date', salesData.period.end);
+      const res = await (await fetch('/api/riders/update_comprobante.php', { method: 'POST', body: fd })).json();
+      if (res.success) {
+        await loadSalesData(currentDaysAgo);
+        await openDeliveryModal();
+      } else {
+        alert('Error: ' + (res.error || 'desconocido'));
+      }
+    } catch (err) {
+      alert(err.message || 'Error al subir comprobante');
+    } finally {
+      setUploadingId(null);
+    }
+  };
+
   const payOrders = async (orders, file) => {
     const riderId = orders[0]?.rider_id;
     if (!riderId) return;
@@ -388,7 +414,7 @@ export default function ArqueoPanel({ onClose, openPanel }) {
 
                       {group.all_paid && (
                         <div className="gr-share">
-                          {deliveryOrders.find(o => o.rider_id === group.rider_id && o.comprobante_url) && (
+                          {deliveryOrders.find(o => o.rider_id === group.rider_id && o.comprobante_url) ? (
                             <div className="gr-comprobante-container">
                               <span className="gr-comprobante-label">Comprobante</span>
                               <img
@@ -398,6 +424,15 @@ export default function ArqueoPanel({ onClose, openPanel }) {
                                 onError={(e) => { e.target.style.display = 'none' }}
                                 onClick={() => setComprobanteModal({ url: deliveryOrders.find(o => o.rider_id === group.rider_id && o.comprobante_url)?.comprobante_url, name: group.rider_name })}
                               />
+                            </div>
+                          ) : (
+                            <div className="gr-comprobante-container">
+                              <span className="gr-comprobante-label">Sin comprobante</span>
+                              <label className={`gr-btn-up-sm ${uploadingId === group.rider_id ? 'dis' : ''}`}>
+                                {uploadingId === group.rider_id ? <Loader2 size={12} className="spin" /> : <Upload size={12} />}
+                                Subir
+                                <input type="file" className="hidden" accept="image/*" disabled={uploadingId === group.rider_id} onChange={e => handleReUploadComprobante(group.rider_id, e)} />
+                              </label>
                             </div>
                           )}
                           <button className="gr-btn shr" onClick={() => { sharePayment(group.rider_id); }}>
@@ -541,6 +576,7 @@ export default function ArqueoPanel({ onClose, openPanel }) {
         .gr-btn.pay:disabled,.dis{opacity:.5;cursor:not-allowed;pointer-events:none}
         .gr-btn.shr{background:#f3e8ff;color:#7c3aed;width:100%;justify-content:center}
         .gr-btn.shr:hover{background:#e9d5ff}
+        .gr-btn-up-sm{display:inline-flex;align-items:center;gap:3px;padding:3px 7px;border:none;border-radius:4px;font-size:9px;font-weight:600;cursor:pointer;background:#fef3c7;color:#d97706}
         .gr-comprobante-container{padding:4px 12px;display:flex;align-items:center;gap:8px}
         .gr-comprobante-label{font-size:9px;color:#6b7280;font-weight:600}
         .gr-comprobante-thumb{width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid #e5e7eb;cursor:pointer;transition:transform .15s}
