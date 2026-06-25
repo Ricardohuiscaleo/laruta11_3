@@ -80,7 +80,8 @@ if ($orderId && $config) {
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; }
         .container { max-width: 480px; margin: 0 auto; padding: 16px; }
         .header { text-align: center; margin-bottom: 24px; }
-        .header-icon { font-size: 40px; margin-bottom: 8px; }
+        .header-icon { width: 48px; height: 48px; margin: 0 auto 8px; }
+        .header-icon img { width: 100%; height: 100%; object-fit: contain; }
         .header h1 { font-size: 20px; font-weight: 800; color: #1f2937; margin: 0; }
         .header p { font-size: 13px; color: #6b7280; margin: 4px 0 0; }
         .card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.1); padding: 20px; margin-bottom: 12px; }
@@ -101,7 +102,7 @@ if ($orderId && $config) {
 <body>
     <div class="container">
         <div class="header">
-            <div class="header-icon">🛵</div>
+            <div class="header-icon"><img src="/rl6logo.png" alt="La Ruta 11" /></div>
             <h1>Pago Delivery</h1>
             <p>La Ruta 11</p>
         </div>
