@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('America/Santiago');
 $config = null;
 foreach ([__DIR__ . '/api/config.php', __DIR__ . '/config.php', __DIR__ . '/public/config.php'] as $p) {
     if (file_exists($p)) { $config = require $p; break; }
