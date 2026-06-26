@@ -493,6 +493,7 @@ export default function ArqueoPanel({ onClose, openPanel }) {
                   ))}
                 </div>
               ))}
+              <a href="/rendicion-diaria.php" target="_blank" className="report-link">📄 Ver rendición pública →</a>
             </div>
           </div>
         </div>
@@ -607,6 +608,8 @@ export default function ArqueoPanel({ onClose, openPanel }) {
         .report-order span:nth-child(1){min-width:120px;font-weight:600;color:#374151}
         .report-order span:nth-child(2){flex:1}
         .report-order span:nth-child(3){font-weight:700;color:#059669}
+        .report-link{display:block;text-align:center;padding:10px;margin-top:8px;background:#f3e8ff;color:#7c3aed;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;transition:background .15s}
+        .report-link:hover{background:#e9d5ff}
         .dm-empty{padding:32px;text-align:center;font-size:13px;color:#9ca3af}
         .hidden{display:none}
         .spin{animation:spin 1s linear infinite}

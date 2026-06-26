@@ -480,6 +480,7 @@ export default function ArqueoApp() {
                   </div>
                 );
               })}
+              <a href="/rendicion-diaria.php" target="_blank" className="report-link">📄 Ver rendición pública →</a>
             </div>
           </div>
         </div>
