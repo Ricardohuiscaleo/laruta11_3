@@ -462,10 +462,7 @@ export default function ArqueoPanel({ onClose, openPanel }) {
         </div>
       )}
 
-      {/* Report Modal */}
-      `}</style>
-    </div>
-  );
+      <style jsx>{`
         .aq-header{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:linear-gradient(to right,#ef4444,#f97316);flex-shrink:0;padding-top:max(0.75rem,env(safe-area-inset-top))}
         .aq-header h1{font-size:18px;color:white;margin:0;display:flex;align-items:center;gap:6px;font-weight:700}
         .aq-close{background:none;border:none;cursor:pointer;padding:6px;border-radius:6px;color:white;display:flex;align-items:center;justify-content:center}

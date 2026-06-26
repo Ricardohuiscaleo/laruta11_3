@@ -441,10 +441,7 @@ export default function ArqueoApp() {
         </div>
       )}
 
-      {/* Report Modal */}
-      `}</style>
-    </div>
-  );
+      <style jsx>{`
         .aq{max-width:600px;margin:0 auto;padding:4px}
         .hd{background:white;padding:8px 10px;border-radius:10px;margin-bottom:6px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
         .hd-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
