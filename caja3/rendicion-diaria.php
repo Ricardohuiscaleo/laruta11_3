@@ -5,7 +5,14 @@ foreach ([__DIR__ . '/api/config.php', __DIR__ . '/config.php', __DIR__ . '/publ
     if (file_exists($p)) { $config = require $p; break; }
 }
 
-$fecha = $_GET['fecha'] ?? date('Y-m-d');
+$fecha = $_GET['fecha'] ?? null;
+if (!$fecha) {
+    $now = new DateTime('now', new DateTimeZone('Etc/GMT+3'));
+    $hour = (int)$now->format('H');
+    $fecha = ($hour >= 0 && $hour < 4)
+        ? $now->modify('-1 day')->format('Y-m-d')
+        : $now->format('Y-m-d');
+}
 $token = $_GET['token'] ?? '';
 $error = null;
 $riders = [];
