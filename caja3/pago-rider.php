@@ -83,8 +83,11 @@ if (!empty($pagos)) {
     $shareAmount = '$' . number_format($first['monto'], 0, ',', '.');
     $orderNumbers = $first['order_numbers'] ?? '';
     $orderDate = $first['order_created_at'] ? (new DateTime($first['order_created_at'], new DateTimeZone('UTC')))->setTimezone(new DateTimeZone('Etc/GMT+3'))->format('d/m/Y H:i') : '';
-    $shareTitle = "Pago a {$shareRider} - {$shareAmount}";
-    $shareDesc = $orderDate ? "{$orderNumbers} - {$orderDate}" : "Delivery {$orderNumbers} - La Ruta 11";
+    $shareAddress = $first['delivery_addresses'] ?? '';
+    $shareMethod = $first['metodo_pago'] === 'transferencia' ? 'Transferencia' : 'Efectivo';
+    $shareTitle = "🛵 Pago Delivery · {$shareRider} · {$shareAmount}";
+    $shareDesc = "{$shareRider} · {$shareAmount} · {$orderDate} · {$orderNumbers} · {$shareMethod}";
+    $shareMetaDesc = "{$shareRider} | {$shareAmount} | {$orderDate} | {$orderNumbers} | {$shareAddress}";
 }
 
 $pageUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . "://{$_SERVER['HTTP_HOST']}{$_SERVER['REQUEST_URI']}";
@@ -95,15 +98,15 @@ $pageUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : '
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $shareTitle ?></title>
-    <meta property="og:title" content="<?= $shareTitle ?>">
-    <meta property="og:description" content="<?= htmlspecialchars($shareDesc) ?>">
+    <meta property="og:title" content="<?= htmlspecialchars($shareTitle) ?>">
+    <meta property="og:description" content="<?= htmlspecialchars($shareMetaDesc) ?>">
     <meta property="og:image" content="https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/2.jpg">
     <meta property="og:url" content="<?= htmlspecialchars($pageUrl) ?>">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="La Ruta 11">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="<?= $shareTitle ?>">
-    <meta name="twitter:description" content="<?= htmlspecialchars($shareDesc) ?>">
+    <meta name="twitter:title" content="<?= htmlspecialchars($shareTitle) ?>">
+    <meta name="twitter:description" content="<?= htmlspecialchars($shareMetaDesc) ?>">
     <meta name="twitter:image" content="https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/2.jpg">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
