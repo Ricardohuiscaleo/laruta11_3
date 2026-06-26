@@ -35,7 +35,7 @@ if ($config) {
                 LEFT JOIN rider_pagos rp ON rp.order_id = o.id AND rp.estado = 'pagado'
                 WHERE o.order_status = 'delivered'
                 AND o.delivery_fee > 0
-                AND DATE(o.created_at) = ?
+                AND DATE(o.created_at - INTERVAL 3 HOUR) = ?
                 GROUP BY o.rider_id
                 ORDER BY total_fees DESC";
 
@@ -56,8 +56,8 @@ if ($config) {
                        WHERE o.order_status = 'delivered'
                        AND o.delivery_fee > 0
                        AND o.rider_id = ?
-                       AND DATE(o.created_at) = ?
-                       ORDER BY o.created_at DESC";
+                        AND DATE(o.created_at - INTERVAL 3 HOUR) = ?
+                        ORDER BY o.created_at DESC";
             $ordStmt = $pdo->prepare($ordSql);
             $ordStmt->execute([$riderId, $fecha]);
             $orders = $ordStmt->fetchAll(PDO::FETCH_ASSOC);
@@ -77,8 +77,8 @@ if ($config) {
                           WHERE o.order_status = 'delivered'
                           AND o.delivery_fee > 0
                           AND o.rider_id IS NULL
-                          AND DATE(o.created_at) = ?
-                          ORDER BY o.created_at DESC";
+                           AND DATE(o.created_at - INTERVAL 3 HOUR) = ?
+                           ORDER BY o.created_at DESC";
         $unassignedStmt = $pdo->prepare($unassignedSql);
         $unassignedStmt->execute([$fecha]);
         $unassignedOrders = $unassignedStmt->fetchAll(PDO::FETCH_ASSOC);
