@@ -176,13 +176,13 @@ $pageUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : '
         .error-box { background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 24px; text-align: center; }
         .error-box p { color: #dc2626; font-size: 14px; font-weight: 600; }
         .footer { text-align: center; font-size: 11px; color: #9ca3af; margin-top: 24px; padding-bottom: 32px; }
-        .hidden { display: none; }
         .share-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px; background: #8b5cf6; color: #fff; font-size: 15px; font-weight: 700; border: none; border-radius: 12px; cursor: pointer; margin-top: 16px; transition: background .15s; }
         .share-btn:hover { background: #7c3aed; }
         .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1f2937; color: #fff; padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; z-index: 3000; opacity: 0; transition: opacity .25s; pointer-events: none; }
         .toast.show { opacity: 1; }
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.85); z-index: 2000; display: flex; align-items: center; justify-content: center; cursor: pointer; }
         .modal-overlay img { max-width: 92vw; max-height: 90vh; border-radius: 8px; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
