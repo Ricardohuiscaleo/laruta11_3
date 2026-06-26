@@ -34,9 +34,12 @@ INSERT INTO riders (nombre, telefono, activo) VALUES
 ('Javier', NULL, 1),
 ('Cecilia', NULL, 1),
 ('Jacqueline', NULL, 1),
-('Luis Vázquez', NULL, 1),
+('Luis', NULL, 1),
 ('Juan', NULL, 1),
 ('Francisca', NULL, 1),
 ('Vivix', NULL, 1),
 ('Beatriz', NULL, 1),
-('Karina', NULL, 1);
+('Karina', NULL, 1),
+('Marcelo', NULL, 1),
+('Ricardo', NULL, 1),
+('Yojhans', NULL, 1);
