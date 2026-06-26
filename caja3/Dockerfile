@@ -49,6 +49,7 @@ RUN rm -rf /var/www/html/* && \
     cp load-env.php /var/www/html/ && \
     cp config.php /var/www/html/ && \
     cp pago-rider.php /var/www/html/ && \
+    cp rendicion-diaria.php /var/www/html/ && \
     cp ws-server.js /var/www/html/ && \
     cp package.json /var/www/html/ && \
     cp package-lock.json /var/www/html/
