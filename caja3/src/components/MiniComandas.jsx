@@ -397,7 +397,8 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
   };
 
   const dispatchToDelivery = async (orderId, orderNumber) => {
-    const riderId = selectedRider[orderId];
+    const order = orders.find(o => o.id === orderId);
+    const riderId = selectedRider[orderId] || order?.rider_id;
     if (!riderId) {
       alert('Selecciona un rider antes de despachar');
       return;
@@ -976,16 +977,29 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
               <div className="bg-white border border-gray-200 rounded p-2 space-y-1.5">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-gray-800">Enviar a Rider 👉🏻</span>
-                  {order.rider_id && (
+                  {(order.rider_id || selectedRider[order.id]) && (
                     <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded font-medium">
-                      🛵 {riders.find(r => r.id === order.rider_id)?.nombre || 'Rider asignado'}
+                      🛵 {riders.find(r => r.id === (selectedRider[order.id] || order.rider_id))?.nombre || 'Rider asignado'}
                     </span>
                   )}
                 </div>
                 <div className="flex gap-1.5">
                   <select
-                    value={selectedRider[order.id] || ''}
-                    onChange={(e) => setSelectedRider(prev => ({ ...prev, [order.id]: parseInt(e.target.value) }))}
+                    value={selectedRider[order.id] || order.rider_id || ''}
+                    onChange={async (e) => {
+                      const riderId = parseInt(e.target.value);
+                      if (!riderId) return;
+                      setSelectedRider(prev => ({ ...prev, [order.id]: riderId }));
+                      try {
+                        await fetch('/api/riders/assign_rider.php', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ order_id: order.id, rider_id: riderId }),
+                        });
+                      } catch (err) {
+                        console.error('Error asignando rider:', err);
+                      }
+                    }}
                     className="flex-1 text-xs border border-gray-300 rounded px-2 py-1.5 bg-white focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none"
                   >
                     <option value="">Seleccionar...</option>
