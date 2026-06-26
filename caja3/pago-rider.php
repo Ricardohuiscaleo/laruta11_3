@@ -1,5 +1,5 @@
 <?php
-date_default_timezone_set('America/Santiago');
+date_default_timezone_set('Etc/GMT+3');
 $config = null;
 foreach ([__DIR__ . '/api/config.php', __DIR__ . '/config.php', __DIR__ . '/public/config.php'] as $p) {
     if (file_exists($p)) { $config = require $p; break; }
@@ -82,7 +82,7 @@ if (!empty($pagos)) {
     $shareRider = htmlspecialchars($first['rider_nombre']);
     $shareAmount = '$' . number_format($first['monto'], 0, ',', '.');
     $orderNumbers = $first['order_numbers'] ?? '';
-    $orderDate = $first['order_created_at'] ? (new DateTime($first['order_created_at'], new DateTimeZone('UTC')))->setTimezone(new DateTimeZone('America/Santiago'))->format('d/m/Y H:i') : '';
+    $orderDate = $first['order_created_at'] ? (new DateTime($first['order_created_at'], new DateTimeZone('UTC')))->setTimezone(new DateTimeZone('Etc/GMT+3'))->format('d/m/Y H:i') : '';
     $shareTitle = "Pago a {$shareRider} - {$shareAmount}";
     $shareDesc = $orderDate ? "{$orderNumbers} - {$orderDate}" : "Delivery {$orderNumbers} - La Ruta 11";
 }
@@ -147,7 +147,7 @@ $pageUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : '
                 <div class="card-row">
                     <div>
                         <div class="card-name"><?= htmlspecialchars($pago['rider_nombre']) ?></div>
-                        <div class="card-date"><?= $pago['order_created_at'] ? (new DateTime($pago['order_created_at'], new DateTimeZone('UTC')))->setTimezone(new DateTimeZone('America/Santiago'))->format('d/m/Y H:i') : date('d/m/Y', strtotime($pago['fecha'])) ?></div>
+                        <div class="card-date"><?= $pago['order_created_at'] ? (new DateTime($pago['order_created_at'], new DateTimeZone('UTC')))->setTimezone(new DateTimeZone('Etc/GMT+3'))->format('d/m/Y H:i') : date('d/m/Y', strtotime($pago['fecha'])) ?></div>
                     </div>
                     <div style="text-align:right;">
                         <div class="card-amount">$<?= number_format($pago['monto'], 0, ',', '.') ?></div>
