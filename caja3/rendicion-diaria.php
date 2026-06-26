@@ -176,6 +176,7 @@ $pageUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : '
         .error-box { background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 24px; text-align: center; }
         .error-box p { color: #dc2626; font-size: 14px; font-weight: 600; }
         .footer { text-align: center; font-size: 11px; color: #9ca3af; margin-top: 24px; padding-bottom: 32px; }
+        .turno-badge { background: #f3f4f6; border-radius: 8px; padding: 6px 12px; font-size: 11px; font-weight: 600; color: #6b7280; text-align: center; margin-bottom: 12px; }
         .share-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px; background: #8b5cf6; color: #fff; font-size: 15px; font-weight: 700; border: none; border-radius: 12px; cursor: pointer; margin-top: 16px; transition: background .15s; }
         .share-btn:hover { background: #7c3aed; }
         .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1f2937; color: #fff; padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; z-index: 3000; opacity: 0; transition: opacity .25s; pointer-events: none; }
@@ -197,6 +198,16 @@ $pageUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : '
             <p>La Ruta 11 · Pagos delivery</p>
             <div class="fecha"><?= date('d/m/Y', strtotime($fecha)) ?></div>
         </div>
+
+        <?php
+        $shiftStart = new DateTime($fecha . ' 17:00:00', new DateTimeZone('Etc/GMT+3'));
+        $shiftEnd = (new DateTime($fecha . ' 17:00:00', new DateTimeZone('Etc/GMT+3')))->modify('+1 day')->setTime(4, 0);
+        $meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+        $turnoLabel = 'Turno: 17:00-04:00 · '
+            . $shiftStart->format('d') . ' al ' . $shiftEnd->format('d')
+            . ' de ' . $meses[(int)$shiftStart->format('n') - 1] . ' ' . $shiftStart->format('Y');
+        ?>
+        <div class="turno-badge"><?= htmlspecialchars($turnoLabel) ?></div>
 
         <?php if ($error): ?>
             <div class="error-box"><p><?= htmlspecialchars($error) ?></p></div>
