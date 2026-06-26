@@ -93,14 +93,14 @@ $shareMsgRaw = "🛵 *Pago Delivery - {$shareRider}*\n\n💰 Monto: {$shareAmoun
     <title><?= $shareTitle ?></title>
     <meta property="og:title" content="<?= $shareTitle ?>">
     <meta property="og:description" content="<?= htmlspecialchars($shareDesc) ?>">
-    <meta property="og:image" content="https://caja.laruta11.cl/rl6logo.png">
+    <meta property="og:image" content="https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/2.jpg">
     <meta property="og:url" content="<?= htmlspecialchars($pageUrl) ?>">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="La Ruta 11">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="<?= $shareTitle ?>">
     <meta name="twitter:description" content="<?= htmlspecialchars($shareDesc) ?>">
-    <meta name="twitter:image" content="https://caja.laruta11.cl/rl6logo.png">
+    <meta name="twitter:image" content="https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/2.jpg">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; }
@@ -130,7 +130,7 @@ $shareMsgRaw = "🛵 *Pago Delivery - {$shareRider}*\n\n💰 Monto: {$shareAmoun
 <body>
     <div class="container">
         <div class="header">
-            <div class="header-icon"><img src="/rl6logo.png" alt="La Ruta 11" /></div>
+            <div class="header-icon"><img src="https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/2.jpg" alt="La Ruta 11" /></div>
             <h1>Pago Delivery</h1>
             <p>La Ruta 11</p>
         </div>
