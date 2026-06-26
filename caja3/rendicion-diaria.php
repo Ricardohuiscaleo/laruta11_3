@@ -28,7 +28,8 @@ if ($config) {
                     COUNT(*) as order_count,
                     SUM(o.delivery_fee) + SUM(COALESCE(o.card_surcharge, 0)) as total_fees,
                     COALESCE(SUM(rp.monto), 0) as total_paid,
-                    COALESCE(SUM(CASE WHEN rp.id IS NOT NULL THEN 0 ELSE o.delivery_fee + COALESCE(o.card_surcharge, 0) END), 0) as pending_fees
+                    COALESCE(SUM(CASE WHEN rp.id IS NOT NULL THEN 0 ELSE o.delivery_fee + COALESCE(o.card_surcharge, 0) END), 0) as pending_fees,
+                    MIN(rp.token) as rider_token
                 FROM tuu_orders o
                 LEFT JOIN riders r ON o.rider_id = r.id
                 LEFT JOIN rider_pagos rp ON rp.order_id = o.id AND rp.estado = 'pagado'
@@ -48,7 +49,8 @@ if ($config) {
             $ordSql = "SELECT o.id, o.order_number, o.delivery_address, o.delivery_fee,
                               o.card_surcharge, o.customer_name, o.customer_phone,
                               rp.monto as paid_amount, rp.estado as pay_status,
-                              rp.token, rp.metodo_pago
+                              rp.token, rp.metodo_pago, rp.comprobante_url,
+                              o.created_at as order_created_at
                        FROM tuu_orders o
                        LEFT JOIN rider_pagos rp ON rp.order_id = o.id
                        WHERE o.order_status = 'delivered'
@@ -123,16 +125,12 @@ $shareDesc = "Rendición riders {$fecha} · {$totalGeneral} total";
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f3f4f6; color: #1f2937; }
         .container { max-width: 640px; margin: 0 auto; padding: 16px; }
-        .header { text-align: center; margin-bottom: 20px; }
+        .header { text-align: center; margin-bottom: 16px; }
         .header-icon { width: 48px; height: 48px; margin: 0 auto 8px; }
         .header-icon img { width: 100%; height: 100%; object-fit: contain; }
         .header h1 { font-size: 20px; font-weight: 800; }
         .header p { font-size: 13px; color: #6b7280; margin: 2px 0 0; }
-
-        .date-nav { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 20px; }
-        .date-nav a { text-decoration: none; color: #2563eb; font-size: 22px; font-weight: 700; padding: 4px 10px; border-radius: 8px; background: #fff; border: 1px solid #e5e7eb; }
-        .date-nav a:hover { background: #eff6ff; }
-        .date-nav span { font-size: 14px; font-weight: 700; color: #374151; min-width: 120px; text-align: center; }
+        .header .fecha { font-size: 12px; color: #9ca3af; margin-top: 2px; }
 
         .summary { background: linear-gradient(135deg, #059669, #10b981); color: #fff; border-radius: 14px; padding: 20px; margin-bottom: 16px; display: flex; justify-content: space-between; }
         .summary-item { text-align: center; flex: 1; }
@@ -145,7 +143,8 @@ $shareDesc = "Rendición riders {$fecha} · {$totalGeneral} total";
         .rider-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; cursor: pointer; user-select: none; transition: background .1s; }
         .rider-header:hover { background: #f9fafb; }
         .rider-info { display: flex; align-items: center; gap: 10px; }
-        .rider-avatar { width: 36px; height: 36px; border-radius: 50%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: #6b7280; }
+        .rider-avatar { width: 36px; height: 36px; border-radius: 50%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: #6b7280; text-decoration: none; transition: background .15s; }
+        .rider-avatar:hover { background: #d1d5db; }
         .rider-name { font-size: 15px; font-weight: 700; }
         .rider-count { font-size: 11px; color: #6b7280; }
         .rider-stats { text-align: right; }
@@ -157,23 +156,26 @@ $shareDesc = "Rendición riders {$fecha} · {$totalGeneral} total";
         .rider-badge.pending { background: #fee2e2; color: #dc2626; }
 
         .rider-orders { border-top: 1px solid #f3f4f6; padding: 8px 16px 12px; }
-        .order-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 12px; border-bottom: 1px solid #f9fafb; }
+        .order-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 8px 0; font-size: 12px; border-bottom: 1px solid #f9fafb; gap: 8px; }
         .order-row:last-child { border-bottom: none; }
-        .order-info { flex: 1; }
+        .order-info { flex: 1; min-width: 0; }
         .order-number { font-weight: 700; color: #374151; }
-        .order-address { color: #6b7280; font-size: 10px; }
-        .order-amount { font-weight: 700; text-align: right; white-space: nowrap; }
+        .order-time { font-size: 9px; color: #9ca3af; }
+        .order-address { color: #6b7280; font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .order-right { text-align: right; flex-shrink: 0; }
+        .order-amount { font-weight: 700; white-space: nowrap; }
         .order-paid { color: #059669; }
         .order-pending { color: #dc2626; }
         .order-link { color: #2563eb; text-decoration: none; font-size: 10px; margin-left: 4px; }
+        .comprobante-thumb { width: 32px; height: 32px; border-radius: 6px; object-fit: cover; border: 1px solid #e5e7eb; cursor: pointer; margin-top: 2px; display: block; margin-left: auto; }
+        .comprobante-thumb:hover { border-color: #2563eb; }
 
         .empty { text-align: center; padding: 40px 20px; color: #9ca3af; }
         .empty p { font-size: 14px; }
         .error-box { background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 24px; text-align: center; }
         .error-box p { color: #dc2626; font-size: 14px; font-weight: 600; }
         .footer { text-align: center; font-size: 11px; color: #9ca3af; margin-top: 24px; padding-bottom: 32px; }
-        .arrow { transition: transform .15s; }
-        .arrow.open { transform: rotate(180deg); }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
@@ -182,12 +184,7 @@ $shareDesc = "Rendición riders {$fecha} · {$totalGeneral} total";
             <div class="header-icon"><img src="https://pub-d6bf1ac3bcb0465cabadb9eeab426a65.r2.dev/2.jpg" alt="La Ruta 11" /></div>
             <h1>Rendición Diaria</h1>
             <p>La Ruta 11 · Pagos delivery</p>
-        </div>
-
-        <div class="date-nav">
-            <a href="?fecha=<?= date('Y-m-d', strtotime($fecha . ' -1 day')) ?>">←</a>
-            <span><?= date('d/m/Y', strtotime($fecha)) ?></span>
-            <a href="?fecha=<?= date('Y-m-d', strtotime($fecha . ' +1 day')) ?>">→</a>
+            <div class="fecha"><?= date('d/m/Y', strtotime($fecha)) ?></div>
         </div>
 
         <?php if ($error): ?>
@@ -220,7 +217,7 @@ $shareDesc = "Rendición riders {$fecha} · {$totalGeneral} total";
             <div class="rider-card">
                 <div class="rider-header" onclick="this.nextElementSibling.classList.toggle('hidden')">
                     <div class="rider-info">
-                        <div class="rider-avatar"><?= strtoupper(substr($rider['rider_nombre'], 0, 1)) ?></div>
+                        <a href="<?= $rider['rider_token'] ? '/pago-rider.php?token=' . urlencode($rider['rider_token']) : '#' ?>" class="rider-avatar" target="_blank" onclick="event.stopPropagation()"><?= strtoupper(substr($rider['rider_nombre'], 0, 1)) ?></a>
                         <div>
                             <div class="rider-name"><?= htmlspecialchars($rider['rider_nombre']) ?></div>
                             <div class="rider-count"><?= $rider['order_count'] ?> pedido<?= $rider['order_count'] !== 1 ? 's' : '' ?></div>
@@ -236,16 +233,26 @@ $shareDesc = "Rendición riders {$fecha} · {$totalGeneral} total";
                     </div>
                 </div>
                 <div class="rider-orders">
-                    <?php foreach ($rider['orders'] as $order): ?>
+                    <?php foreach ($rider['orders'] as $order):
+                        $orderTime = $order['order_created_at'] ? (new DateTime($order['order_created_at'], new DateTimeZone('UTC')))->setTimezone(new DateTimeZone('Etc/GMT+3'))->format('d/m/Y H:i') : '';
+                    ?>
                     <div class="order-row">
                         <div class="order-info">
                             <div class="order-number"><?= htmlspecialchars($order['order_number']) ?></div>
+                            <?php if ($orderTime): ?><div class="order-time"><?= $orderTime ?></div><?php endif; ?>
                             <div class="order-address"><?= htmlspecialchars($order['delivery_address'] ?? 'Sin dirección') ?></div>
                         </div>
-                        <div class="order-amount <?= !empty($order['pay_status']) && $order['pay_status'] === 'pagado' ? 'order-paid' : 'order-pending' ?>">
-                            $<?= number_format($order['delivery_fee'] + ($order['card_surcharge'] ?? 0), 0, ',', '.') ?>
-                            <?php if (!empty($order['token'])): ?>
-                                <a href="/pago-rider.php?token=<?= htmlspecialchars($order['token']) ?>" class="order-link" target="_blank">🔗</a>
+                        <div class="order-right">
+                            <div class="order-amount <?= !empty($order['pay_status']) && $order['pay_status'] === 'pagado' ? 'order-paid' : 'order-pending' ?>">
+                                $<?= number_format($order['delivery_fee'] + ($order['card_surcharge'] ?? 0), 0, ',', '.') ?>
+                                <?php if (!empty($order['token'])): ?>
+                                    <a href="/pago-rider.php?token=<?= htmlspecialchars($order['token']) ?>" class="order-link" target="_blank">🔗</a>
+                                <?php endif; ?>
+                            </div>
+                            <?php if ($order['metodo_pago'] === 'transferencia' && $order['comprobante_url'] && strpos($order['comprobante_url'], 'http') === 0): ?>
+                                <a href="<?= htmlspecialchars($order['comprobante_url']) ?>" target="_blank">
+                                    <img src="<?= htmlspecialchars($order['comprobante_url']) ?>" alt="comprobante" class="comprobante-thumb" onerror="this.style.display='none'" />
+                                </a>
                             <?php endif; ?>
                         </div>
                     </div>
