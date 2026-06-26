@@ -1,6 +1,9 @@
 import React from 'react';
 import { X } from 'lucide-react';
 
+const FREE_SAUCES = 3;
+const SAUCE_EXTRA_PRICE = 300;
+
 const PaymentPendingModal = ({ isOpen, onClose, paymentType, orderData }) => {
   if (!isOpen || !orderData) return null;
 
@@ -114,7 +117,7 @@ const PaymentPendingModal = ({ isOpen, onClose, paymentType, orderData }) => {
         item.component_customizations.forEach(comp => {
           if (comp.customizations && comp.customizations.length > 0) {
             const parts = comp.customizations.map((cust, custIdx) => {
-              if (cust.isSauce) return `${cust.name}${custIdx === 0 ? ' (1ra gratis)' : ' (+$500)'}`;
+              if (cust.isSauce) return `${cust.name}${(() => { let sc = 0; for (let i = 0; i < custIdx; i++) if (comp.customizations[i].isSauce) sc++; return sc < FREE_SAUCES ? ` (${sc + 1}ra gratis)` : ` (+$${SAUCE_EXTRA_PRICE.toLocaleString('es-CL')})`; })()}`;
               return `${cust.quantity || 1}x ${cust.name} (+$${((cust.price || 0) * (cust.quantity || 1)).toLocaleString('es-CL')})`;
             });
             message += `   🎯 ${comp.label || comp.product_name || comp.name || 'Producto'}: ${parts.join(', ')}\n`;

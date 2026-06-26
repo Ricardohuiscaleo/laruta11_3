@@ -100,7 +100,7 @@ const ComboModal = ({ combo, isOpen, onClose, onAddToCart, quantity = 1 }) => {
           const opt = options.find(o => o.product_id === productId);
           if (opt) {
             if (isSauceGroup) {
-              total += idx === 0 ? 0 : (opt.price_adjustment || 500);
+              total += i < 3 ? 0 : (opt.price_adjustment || 300);
             } else {
               total += (opt.price_adjustment || 0);
             }

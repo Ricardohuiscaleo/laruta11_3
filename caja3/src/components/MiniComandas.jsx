@@ -3,6 +3,10 @@ import { DollarSign, User, Package, Phone, MessageSquare, Copy, CreditCard, Bank
 import ChecklistCard from './ChecklistCard.jsx';
 import { generatePhotoRequirements, getButtonState, formatPhotoProgress } from '../utils/photoRequirements.js';
 
+const FREE_SAUCES = 3;
+const SAUCE_EXTRA_PRICE = 300;
+const DIP_PRICE = 500;
+
 function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
   const [orders, setOrders] = useState([]);
   const [checklists, setChecklists] = useState([]);
@@ -73,7 +77,7 @@ function MiniComandas({ onOrdersUpdate, onClose, activeOrdersCount }) {
 
   const formatSauces = (sauces) => {
     if (!sauces || sauces.length === 0) return '';
-    return sauces.map((s, i) => `${s.name}${i === 0 ? ' (1ra gratis)' : ' (+$500)'}`).join(', ');
+    return sauces.map((s, i) => `${s.name}${i < FREE_SAUCES ? ` (${i + 1}ra gratis)` : ` (+$${SAUCE_EXTRA_PRICE.toLocaleString('es-CL')})`}`).join(', ');
   };
 
   const loadOrders = async () => {
