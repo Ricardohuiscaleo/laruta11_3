@@ -20,7 +20,6 @@ export default function ArqueoPanel({ onClose, openPanel }) {
   const [metodoPago, setMetodoPago] = useState({});
   const [editingRider, setEditingRider] = useState({});
   const [comprobanteModal, setComprobanteModal] = useState(null);
-  const [reportModal, setReportModal] = useState(null);
 
   useEffect(() => {
     loadSalesData();
@@ -333,7 +332,7 @@ export default function ArqueoPanel({ onClose, openPanel }) {
             <div className="dm-h">
               <h3><Bike size={16} /> Delivery</h3>
               <div className="dm-h-acts">
-                {deliveryOrders.length > 0 && <button className="dm-report-btn" onClick={() => setReportModal(true)}>Reporte</button>}
+                {deliveryOrders.length > 0 && <a href="/rendicion-diaria.php" target="_blank" className="dm-report-btn">Reporte</a>}
                 <button className="dm-x" onClick={() => setShowModal(false)}><X size={16} /></button>
               </div>
             </div>
@@ -464,42 +463,9 @@ export default function ArqueoPanel({ onClose, openPanel }) {
       )}
 
       {/* Report Modal */}
-      {reportModal && (
-        <div className="dm-over" onClick={() => setReportModal(false)} style={{ zIndex: 1100 }}>
-          <div className="report-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 520, width: '100%' }}>
-            <div className="report-h">
-              <h3><Bike size={16} /> Reporte Delivery</h3>
-              <button onClick={() => setReportModal(false)}><X size={20} /></button>
-            </div>
-            <div className="report-body">
-              <div className="report-period">{salesData?.shift_date}</div>
-              <div className="report-summary">
-                <span>Total delivery: ${fmt(deliveryTotal)}</span>
-                <span>Pedidos: {deliveryCount}</span>
-              </div>
-              {groupByRider(deliveryOrders).map(g => (
-                <div key={g.rider_id} className="report-rider">
-                  <div className="report-rider-h">
-                    <strong>{g.rider_name}</strong>
-                    <span>${fmt(g.total_fees)}</span>
-                    <span className={`report-badge ${g.all_paid ? 'rbp' : 'rbpe'}`}>{g.all_paid ? 'Pagado' : 'Pendiente'}</span>
-                  </div>
-                  {g.orders.map(o => (
-                    <div key={o.id} className="report-order">
-                      <span>{o.order_number}</span>
-                      <span>{o.customer_name}</span>
-                      <span>${fmt(totalFee(o))}</span>
-                    </div>
-                  ))}
-                </div>
-              ))}
-              <a href="/rendicion-diaria.php" target="_blank" className="report-link">📄 Ver rendición pública →</a>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <style>{`
+      `}</style>
+    </div>
+  );
         .aq-header{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:linear-gradient(to right,#ef4444,#f97316);flex-shrink:0;padding-top:max(0.75rem,env(safe-area-inset-top))}
         .aq-header h1{font-size:18px;color:white;margin:0;display:flex;align-items:center;gap:6px;font-weight:700}
         .aq-close{background:none;border:none;cursor:pointer;padding:6px;border-radius:6px;color:white;display:flex;align-items:center;justify-content:center}

@@ -17,7 +17,6 @@ export default function ArqueoApp() {
   const [uploadingId, setUploadingId] = useState(null);
   const [metodoPago, setMetodoPago] = useState({});
   const [comprobanteModal, setComprobanteModal] = useState(null);
-  const [reportModal, setReportModal] = useState(null);
 
   useEffect(() => {
     loadSalesData();
@@ -191,10 +190,6 @@ export default function ArqueoApp() {
     if (!salesData) return;
     window.location.href = `/ventas-detalle?start=${encodeURIComponent(salesData.period.start)}&end=${encodeURIComponent(salesData.period.end)}`;
   };
-  const openReportModal = () => {
-    if (!salesData) return;
-    setReportModal(true);
-  };
   const fmt = (n) => Math.round(n).toLocaleString('es-CL');
 
   // Group delivery orders by rider for modal view
@@ -311,7 +306,7 @@ export default function ArqueoApp() {
             <div className="modal-h">
               <h2><Bike size={16} /> Delivery</h2>
               <div className="modal-h-acts">
-                {deliveryOrders.length > 0 && <button className="modal-report-btn" onClick={openReportModal}>Reporte</button>}
+                {deliveryOrders.length > 0 && <a href="/rendicion-diaria.php" target="_blank" className="modal-report-btn">Reporte</a>}
                 <button className="modal-x" onClick={() => setShowModal(false)}><X size={16} /></button>
               </div>
             </div>
@@ -447,46 +442,9 @@ export default function ArqueoApp() {
       )}
 
       {/* Report Modal */}
-      {reportModal && (
-        <div className="overlay" onClick={() => setReportModal(false)}>
-          <div className="report-modal" onClick={e => e.stopPropagation()}>
-            <div className="report-h">
-              <h3><Bike size={16} /> Reporte Delivery</h3>
-              <button onClick={() => setReportModal(false)}><X size={20} /></button>
-            </div>
-            <div className="report-body">
-              <div className="report-period">{salesData.shift_date}</div>
-              <div className="report-summary">
-                <span>Total delivery: ${fmt(deliveryTotal)}</span>
-                <span>Pedidos: {deliveryCount}</span>
-              </div>
-              {groupByRider(deliveryOrders).map(g => {
-                const rr = riders.find(r => parseInt(r.rider_id) === g.rider_id);
-                const paid = rr && parseInt(rr.todos_pagados) === 1;
-                return (
-                  <div key={g.rider_id} className="report-rider">
-                    <div className="report-rider-h">
-                      <strong>{g.rider_name}</strong>
-                      <span>${fmt(g.total_fees)}</span>
-                      <span className={`report-badge ${paid ? 'rbp' : 'rbpe'}`}>{paid ? 'Pagado' : 'Pendiente'}</span>
-                    </div>
-                    {g.orders.map(o => (
-                      <div key={o.id} className="report-order">
-                        <span>{o.order_number}</span>
-                        <span>{o.customer_name}</span>
-                        <span>${fmt(parseFloat(o.delivery_fee) + parseFloat(o.card_surcharge || 0))}</span>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })}
-              <a href="/rendicion-diaria.php" target="_blank" className="report-link">📄 Ver rendición pública →</a>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <style jsx>{`
+      `}</style>
+    </div>
+  );
         .aq{max-width:600px;margin:0 auto;padding:4px}
         .hd{background:white;padding:8px 10px;border-radius:10px;margin-bottom:6px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
         .hd-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
