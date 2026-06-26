@@ -6,6 +6,7 @@ import { comprasApi } from '@/lib/compras-api';
 import { useCompras } from '@/contexts/ComprasContext';
 import type { StockItem } from '@/types/compras';
 import { getIngredientEmoji } from '@/lib/ingredient-emoji';
+import { formatearPesosCLP } from '@/lib/compras-utils';
 
 const SEMAFORO_COLORS: Record<string, string> = {
   rojo: 'bg-red-100 text-red-800 border-red-200',
@@ -51,6 +52,7 @@ export default function StockDashboard() {
   const [editId, setEditId] = useState<number | null>(null);
   const [editStock, setEditStock] = useState('');
   const [editMin, setEditMin] = useState('');
+  const [editName, setEditName] = useState('');
   // Consume mode
   const [consumeId, setConsumeId] = useState<number | null>(null);
   const [consumeQty, setConsumeQty] = useState('');
@@ -91,7 +93,7 @@ export default function StockDashboard() {
   });
 
   const startEdit = (item: StockItem) => {
-    setEditId(item.id); setEditStock(String(item.current_stock)); setEditMin(String(item.min_stock_level));
+    setEditId(item.id); setEditStock(String(item.current_stock)); setEditMin(String(item.min_stock_level)); setEditName(item.name);
     setConsumeId(null);
   };
 
@@ -99,7 +101,7 @@ export default function StockDashboard() {
     if (!editId) return;
     try {
       await comprasApi.patch(`/stock/${editId}`, {
-        current_stock: parseFloat(editStock), min_stock_level: parseFloat(editMin),
+        current_stock: parseFloat(editStock), min_stock_level: parseFloat(editMin), name: editName.trim(),
       });
       setEditId(null); fetchItems();
     } catch { alert('Error al guardar'); }
@@ -252,10 +254,12 @@ export default function StockDashboard() {
                           </div>
 
                           {isEditing ? (
-                            <div className="mt-2 space-y-1">
+                            <div className="mt-2 space-y-1.5">
+                              <input type="text" value={editName} onChange={e => setEditName(e.target.value)}
+                                className="w-full rounded border px-1.5 py-1 text-xs" placeholder="Nombre" autoFocus />
                               <div className="flex gap-1">
                                 <input type="number" value={editStock} onChange={e => setEditStock(e.target.value)}
-                                  className="w-full rounded border px-1.5 py-1 text-xs" placeholder="Stock" autoFocus />
+                                  className="w-full rounded border px-1.5 py-1 text-xs" placeholder="Stock" />
                                 <input type="number" value={editMin} onChange={e => setEditMin(e.target.value)}
                                   className="w-full rounded border px-1.5 py-1 text-xs" placeholder="Mín" />
                               </div>
@@ -283,6 +287,12 @@ export default function StockDashboard() {
                             <div className="mt-1.5 grid grid-cols-2 gap-x-2 text-[11px]">
                               <div>Stock: <span className="font-medium">{stock} {item.unit}</span></div>
                               <div>Mín: <span className="font-medium">{min} {item.unit}</span></div>
+                              {item.cost_per_unit != null && item.cost_per_unit > 0 && (
+                                <div>Costo: <span className="font-medium">{formatearPesosCLP(item.cost_per_unit)}/{item.unit}</span></div>
+                              )}
+                              {item.cost_per_unit != null && item.cost_per_unit > 0 && (
+                                <div>Inv: <span className="font-medium">{formatearPesosCLP(item.cost_per_unit * stock)}</span></div>
+                              )}
                               {item.ultima_compra_cantidad != null && (
                                 <div>Últ: <span className="font-medium">{item.ultima_compra_cantidad}</span></div>
                               )}
