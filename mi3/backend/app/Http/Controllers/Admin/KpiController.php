@@ -55,7 +55,7 @@ class KpiController extends Controller
     {
         $rendiciones = Rendicion::orderBy('created_at', 'desc')
             ->limit(20)
-            ->get(['id', 'token', 'saldo_anterior', 'total_compras', 'saldo_resultante', 'monto_transferido', 'saldo_nuevo', 'estado', 'created_at', 'aprobado_at']);
+            ->get(['id', 'token', 'saldo_anterior', 'total_compras', 'saldo_resultante', 'monto_transferido', 'saldo_nuevo', 'estado', 'notas', 'created_at', 'aprobado_at']);
 
         return response()->json(['success' => true, 'rendiciones' => $rendiciones]);
     }

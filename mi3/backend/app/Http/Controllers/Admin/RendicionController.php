@@ -288,4 +288,25 @@ class RendicionController extends Controller
             'mensaje' => 'Monto transferido rectificado correctamente',
         ]);
     }
+
+    /**
+     * Update notas of a rendición.
+     * POST /api/v1/admin/rendiciones/{id}/notas
+     */
+    public function updateNotas(Request $request, int $id): JsonResponse
+    {
+        $request->validate([
+            'notas' => 'nullable|string|max:1000',
+        ]);
+
+        $rendicion = Rendicion::findOrFail($id);
+        $rendicion->update([
+            'notas' => $request->input('notas'),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'rendicion' => $rendicion->fresh(),
+        ]);
+    }
 }

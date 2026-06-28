@@ -22,6 +22,7 @@ interface Rendicion {
   monto_transferido: number | null;
   saldo_nuevo: number | null;
   estado: 'pendiente' | 'aprobada' | 'rechazada';
+  notas: string | null;
   creado_por: string;
   aprobado_por: string | null;
   created_at: string;
@@ -33,8 +34,12 @@ export default function RendicionesPage() {
   const [rendiciones, setRendiciones] = useState<Rendicion[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [notas, setNotas] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  const [editNotasId, setEditNotasId] = useState<number | null>(null);
+  const [editNotasText, setEditNotasText] = useState('');
+  const [savingNotas, setSavingNotas] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -55,7 +60,7 @@ export default function RendicionesPage() {
     if (!preview || preview.compras_count === 0) return;
     setCreating(true);
     try {
-      const res = await comprasApi.post<{ success: boolean; token: string; compras_rendidas: number }>('/rendiciones', {});
+      const res = await comprasApi.post<{ success: boolean; token: string; compras_rendidas: number }>('/rendiciones', { notas: notas || null });
       if (res.success) {
         const url = `https://mi.laruta11.cl/rendicion/${res.token}`;
         const msg = `📋 *RENDICIÓN DE GASTOS*\n💰 Saldo anterior: ${formatearPesosCLP(preview.saldo_anterior)}\n🛒 Total compras: ${formatearPesosCLP(preview.total_compras)} (${res.compras_rendidas} compras)\n💳 Saldo: ${formatearPesosCLP(preview.saldo_resultante)}\n\n🔗 ${url}`;
@@ -66,6 +71,16 @@ export default function RendicionesPage() {
       }
     } catch { alert('Error al crear rendición'); }
     setCreating(false);
+  };
+
+  const saveNotas = async (id: number) => {
+    setSavingNotas(true);
+    try {
+      await comprasApi.post(`/rendiciones/${id}/notas`, { notas: editNotasText || null });
+      setEditNotasId(null);
+      load();
+    } catch { alert('Error al guardar notas'); }
+    setSavingNotas(false);
   };
 
   const getLink = (token: string) => `https://mi.laruta11.cl/rendicion/${token}`;
@@ -126,6 +141,10 @@ export default function RendicionesPage() {
             </div>
           )}
 
+          <textarea value={notas} onChange={e => setNotas(e.target.value)}
+            rows={2} placeholder="Notas (opcional) — ej: montos transferidos, detalle..."
+            className="w-full rounded-lg border px-3 py-2 text-sm mt-2" />
+
           <button onClick={handleCreate} disabled={creating}
             className="w-full rounded-lg bg-mi3-500 py-2.5 text-sm font-medium text-white hover:bg-mi3-600 disabled:opacity-50 flex items-center justify-center gap-2">
             {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
@@ -170,6 +189,28 @@ export default function RendicionesPage() {
                 <div><span className="text-xs text-gray-500">Saldo nuevo</span><p className="font-bold">{formatearPesosCLP(r.saldo_nuevo)}</p></div>
               )}
             </div>
+            {editNotasId === r.id ? (
+              <div className="mt-2 pt-2 border-t space-y-1">
+                <textarea value={editNotasText} onChange={e => setEditNotasText(e.target.value)}
+                  rows={2} className="w-full rounded border px-2 py-1 text-xs" />
+                <div className="flex gap-2">
+                  <button onClick={() => saveNotas(r.id)} disabled={savingNotas}
+                    className="rounded bg-blue-600 px-2 py-0.5 text-xs text-white disabled:opacity-50">
+                    {savingNotas ? 'Guardando...' : 'Guardar'}
+                  </button>
+                  <button onClick={() => setEditNotasId(null)}
+                    className="rounded bg-gray-200 px-2 py-0.5 text-xs">Cancelar</button>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-2 pt-2 border-t flex items-start gap-2">
+                <p className="text-xs text-gray-500 flex-1">📝 {r.notas || 'Sin notas'}</p>
+                <button onClick={() => { setEditNotasId(r.id); setEditNotasText(r.notas || ''); }}
+                  className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-500 hover:bg-gray-200 flex-shrink-0">
+                  Editar
+                </button>
+              </div>
+            )}
           </div>
         ))}
       </div>

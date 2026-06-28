@@ -8,7 +8,7 @@ import { formatearPesosCLP } from '@/lib/compras-utils';
 interface RendicionItem {
   id: number; token: string; saldo_anterior: number; total_compras: number;
   saldo_resultante: number; monto_transferido: number | null; saldo_nuevo: number | null;
-  estado: string; created_at: string; aprobado_at: string | null;
+  estado: string; notas: string | null; created_at: string; aprobado_at: string | null;
 }
 
 export default function HistorialRendicionesPage() {
@@ -18,6 +18,9 @@ export default function HistorialRendicionesPage() {
   const [rectifyMonto, setRectifyMonto] = useState('');
   const [rectifyMotivo, setRectifyMotivo] = useState('');
   const [rectifying, setRectifying] = useState(false);
+  const [editNotasId, setEditNotasId] = useState<number | null>(null);
+  const [editNotasText, setEditNotasText] = useState('');
+  const [savingNotas, setSavingNotas] = useState(false);
 
   const fetchRendiciones = useCallback(async () => {
     setLoading(true);
@@ -51,6 +54,16 @@ export default function HistorialRendicionesPage() {
     } finally {
       setRectifying(false);
     }
+  };
+
+  const saveNotas = async (id: number) => {
+    setSavingNotas(true);
+    try {
+      await comprasApi.post(`/rendiciones/${id}/notas`, { notas: editNotasText || null });
+      setEditNotasId(null);
+      fetchRendiciones();
+    } catch { alert('Error al guardar notas'); }
+    setSavingNotas(false);
   };
 
   if (loading) return <div className="p-6 text-center text-sm text-gray-500">Cargando...</div>;
@@ -148,6 +161,28 @@ export default function HistorialRendicionesPage() {
                         <p className="text-gray-500">Saldo nuevo</p>
                         <p className="font-bold text-green-700">{formatearPesosCLP(r.saldo_nuevo ?? 0)}</p>
                       </div>
+                    </div>
+                  )}
+                  {editNotasId === r.id ? (
+                    <div className="mt-2 pt-2 border-t space-y-1">
+                      <textarea value={editNotasText} onChange={e => setEditNotasText(e.target.value)}
+                        rows={2} className="w-full rounded border px-2 py-1 text-xs" />
+                      <div className="flex gap-2">
+                        <button onClick={() => saveNotas(r.id)} disabled={savingNotas}
+                          className="rounded bg-blue-600 px-2 py-0.5 text-xs text-white disabled:opacity-50">
+                          {savingNotas ? 'Guardando...' : 'Guardar'}
+                        </button>
+                        <button onClick={() => setEditNotasId(null)}
+                          className="rounded bg-gray-200 px-2 py-0.5 text-xs">Cancelar</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-2 pt-2 border-t flex items-start gap-2">
+                      <p className="text-xs text-gray-500 flex-1">📝 {r.notas || 'Sin notas'}</p>
+                      <button onClick={() => { setEditNotasId(r.id); setEditNotasText(r.notas || ''); }}
+                        className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-500 hover:bg-gray-200 flex-shrink-0">
+                        Editar
+                      </button>
                     </div>
                   )}
                 </>

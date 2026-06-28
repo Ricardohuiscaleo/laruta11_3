@@ -188,6 +188,18 @@ export default function RendicionPublicPage({ params }: { params: { token: strin
         )}
       </div>
 
+      {/* Notas */}
+      {rendicion.notas && (
+        <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
+          <div className="px-3 py-2 border-b bg-gray-50">
+            <h3 className="text-sm font-semibold text-gray-700">📝 Notas</h3>
+          </div>
+          <div className="px-3 py-2">
+            <p className="text-sm text-gray-700 whitespace-pre-wrap">{rendicion.notas}</p>
+          </div>
+        </div>
+      )}
+
       {/* Compras */}
       <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
         <div className="px-3 py-2 border-b bg-gray-50">
