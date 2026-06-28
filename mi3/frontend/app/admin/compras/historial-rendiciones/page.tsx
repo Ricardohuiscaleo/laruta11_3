@@ -178,7 +178,7 @@ export default function HistorialRendicionesPage() {
                     </div>
                   ) : (
                     <div className="mt-2 pt-2 border-t flex items-start gap-2">
-                      <p className="text-xs text-gray-500 flex-1">📝 {r.notas || 'Sin notas'}</p>
+                      <p className="text-xs text-gray-500 flex-1 whitespace-pre-wrap">📝 {r.notas || 'Sin notas'}</p>
                       <button onClick={() => { setEditNotasId(r.id); setEditNotasText(r.notas || ''); }}
                         className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-500 hover:bg-gray-200 flex-shrink-0">
                         Editar
