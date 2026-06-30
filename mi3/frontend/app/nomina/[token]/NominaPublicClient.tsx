@@ -45,9 +45,10 @@ interface Props {
   initialCreatedAt?: string;
   initialAprobadoPor?: string | null;
   initialAprobadoAt?: string | null;
+  initialConfirmados?: number[];
 }
 
-export default function NominaPublicClient({ params, initialData, initialMes, initialCreatedAt, initialAprobadoPor, initialAprobadoAt }: Props) {
+export default function NominaPublicClient({ params, initialData, initialMes, initialCreatedAt, initialAprobadoPor, initialAprobadoAt, initialConfirmados }: Props) {
   const searchParams = useSearchParams();
   const workerId = searchParams.get('worker');
 
@@ -61,7 +62,7 @@ export default function NominaPublicClient({ params, initialData, initialMes, in
   const [copied, setCopied] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [confirmingWorker, setConfirmingWorker] = useState(false);
-  const [confirmedIds, setConfirmedIds] = useState<Set<number>>(new Set());
+  const [confirmedIds, setConfirmedIds] = useState<Set<number>>(new Set(initialConfirmados ?? []));
 
   // Fetch on mount only if no initial data (e.g. direct link without SSR)
   useEffect(() => {
@@ -72,13 +73,7 @@ export default function NominaPublicClient({ params, initialData, initialMes, in
         if (d.success) {
           setMes(d.mes); setData(d.data); setCreatedAt(d.created_at);
           setAprobadoPor(d.aprobado_por); setAprobadoAt(d.aprobado_at);
-          const cids = new Set<number>();
-          for (const centro of ['ruta11', 'seguridad']) {
-            for (const w of (d.data?.[centro]?.workers ?? [])) {
-              if (w.confirmado) cids.add(w.personal_id);
-            }
-          }
-          setConfirmedIds(cids);
+          setConfirmedIds(new Set<number>(d.confirmados ?? []));
         } else setError('Nómina no encontrada');
       })
       .catch(() => setError('Error de conexión'))

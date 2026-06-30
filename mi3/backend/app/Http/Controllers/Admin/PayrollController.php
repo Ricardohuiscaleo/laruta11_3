@@ -35,16 +35,13 @@ class PayrollController extends Controller
         $raw = $this->nominaService->getResumen($mes);
         $mesDate = $mes . '-01';
 
-        // Load worker confirmations from nomina_confirmaciones table
+        // Load worker confirmations from nomina_confirmaciones table (all snapshots for the month)
         $snapshotConfirmados = [];
-        $latestSnapshot = NominaSnapshot::where('mes', $mes)->latest()->first();
-        if ($latestSnapshot) {
-            $confirmaciones = NominaConfirmacion::where('nomina_snapshot_id', $latestSnapshot->id)
-                ->whereNotNull('confirmado_at')
-                ->pluck('confirmado_at', 'personal_id');
-            foreach ($confirmaciones as $pid => $at) {
-                $snapshotConfirmados[(int) $pid] = true;
-            }
+        $confirmaciones = NominaConfirmacion::whereHas('snapshot', fn($q) => $q->where('mes', $mes))
+            ->whereNotNull('confirmado_at')
+            ->pluck('confirmado_at', 'personal_id');
+        foreach ($confirmaciones as $pid => $at) {
+            $snapshotConfirmados[(int) $pid] = true;
         }
 
         $result = [];
@@ -453,6 +450,13 @@ class PayrollController extends Controller
     {
         $snapshot = NominaSnapshot::where('token', $token)->firstOrFail();
 
+        $confirmados = NominaConfirmacion::whereHas('snapshot', fn($q) => $q->where('mes', $snapshot->mes))
+            ->whereNotNull('confirmado_at')
+            ->pluck('personal_id')
+            ->map(fn($id) => (int) $id)
+            ->values()
+            ->toArray();
+
         return response()->json([
             'success' => true,
             'mes' => $snapshot->mes,
@@ -460,6 +464,7 @@ class PayrollController extends Controller
             'created_at' => $snapshot->created_at?->toIso8601String(),
             'aprobado_por' => $snapshot->aprobado_por,
             'aprobado_at' => $snapshot->aprobado_at?->toIso8601String(),
+            'confirmados' => $confirmados,
         ]);
     }
 

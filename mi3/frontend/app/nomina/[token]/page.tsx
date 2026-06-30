@@ -72,6 +72,7 @@ export default async function NominaPublicPage(props: Props) {
   let initialCreatedAt = '';
   let initialAprobadoPor: string | null = null;
   let initialAprobadoAt: string | null = null;
+  let initialConfirmados: number[] = [];
 
   try {
     const res = await fetch(`${API}/api/v1/nomina/${props.params.token}`, {
@@ -85,6 +86,7 @@ export default async function NominaPublicPage(props: Props) {
       initialCreatedAt = d.created_at ?? '';
       initialAprobadoPor = d.aprobado_por ?? null;
       initialAprobadoAt = d.aprobado_at ?? null;
+      initialConfirmados = d.confirmados ?? [];
     }
   } catch {}
 
@@ -96,6 +98,7 @@ export default async function NominaPublicPage(props: Props) {
       initialCreatedAt={initialCreatedAt}
       initialAprobadoPor={initialAprobadoPor}
       initialAprobadoAt={initialAprobadoAt}
+      initialConfirmados={initialConfirmados}
     />
   );
 }
