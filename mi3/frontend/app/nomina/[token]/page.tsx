@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Loader2, Share2, ChevronDown, ChevronUp, Wallet, TrendingDown, CreditCard, ArrowUpRight, ArrowDownRight, Check, X, Clock } from 'lucide-react';
+import { Loader2, Share2, ChevronDown, ChevronUp, ChevronRight, Wallet, TrendingDown, CreditCard, ArrowUpRight, ArrowDownRight, Check, X, Clock } from 'lucide-react';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://api-mi3.laruta11.cl';
 const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-CL');
