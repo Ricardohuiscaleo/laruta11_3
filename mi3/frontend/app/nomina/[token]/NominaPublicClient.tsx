@@ -307,7 +307,7 @@ function CentroCard({ title, workers, summary, mes, showCredits, confirmados }: 
                       <span className="text-sm font-semibold text-gray-800">{w.nombre}</span>
                       {confirmados?.has(w.personal_id) && (
                         <span className="inline-flex items-center gap-0.5 text-[10px] text-green-700 bg-green-50 rounded-full px-1.5 py-0.5">
-                          <Check className="h-2.5 w-2.5" /> {new Date(confirmados.get(w.personal_id)!).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
+                          <Check className="h-2.5 w-2.5" /> Confirmado el {new Date(confirmados.get(w.personal_id)!).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })} a las {new Date(confirmados.get(w.personal_id)!).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       )}
                       <span className="text-[10px] text-gray-400 capitalize ml-0.5">{w.rol}</span>
