@@ -438,6 +438,39 @@ class PayrollController extends Controller
             'mes' => $snapshot->mes,
             'data' => $snapshot->data,
             'created_at' => $snapshot->created_at?->toIso8601String(),
+            'aprobado_por' => $snapshot->aprobado_por,
+            'aprobado_at' => $snapshot->aprobado_at?->toIso8601String(),
+        ]);
+    }
+
+    /**
+     * Approve a payroll snapshot (marks the month as approved).
+     * POST /nomina/{token}/approve
+     */
+    public function approveSnapshot(Request $request, string $token): JsonResponse
+    {
+        $request->validate([
+            'aprobado_por' => 'nullable|string|max:100',
+        ]);
+
+        $snapshot = NominaSnapshot::where('token', $token)->firstOrFail();
+
+        if ($snapshot->aprobado_at) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Esta nómina ya fue aprobada',
+            ], 422);
+        }
+
+        $snapshot->update([
+            'aprobado_por' => $request->input('aprobado_por', 'Yojhans'),
+            'aprobado_at' => now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'aprobado_por' => $snapshot->aprobado_por,
+            'aprobado_at' => $snapshot->aprobado_at?->toIso8601String(),
         ]);
     }
 }

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Loader2, Share2, ChevronDown, ChevronUp, Wallet, TrendingDown, CreditCard, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { Loader2, Share2, ChevronDown, ChevronUp, Wallet, TrendingDown, CreditCard, ArrowUpRight, ArrowDownRight, Check, X, Clock } from 'lucide-react';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://api-mi3.laruta11.cl';
 const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-CL');
@@ -34,23 +35,42 @@ interface CentroData {
 interface SnapshotData { ruta11: CentroData; seguridad: CentroData; }
 
 export default function NominaPublicPage({ params }: { params: { token: string } }) {
+  const searchParams = useSearchParams();
+  const workerId = searchParams.get('worker');
+
   const [mes, setMes] = useState('');
   const [data, setData] = useState<SnapshotData | null>(null);
   const [createdAt, setCreatedAt] = useState('');
+  const [aprobadoPor, setAprobadoPor] = useState<string | null>(null);
+  const [aprobadoAt, setAprobadoAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetch(`${API}/api/v1/nomina/${params.token}`, { headers: { Accept: 'application/json' } })
       .then(r => r.json())
       .then(d => {
-        if (d.success) { setMes(d.mes); setData(d.data); setCreatedAt(d.created_at); }
+        if (d.success) { setMes(d.mes); setData(d.data); setCreatedAt(d.created_at); setAprobadoPor(d.aprobado_por); setAprobadoAt(d.aprobado_at); }
         else setError('Nómina no encontrada');
       })
       .catch(() => setError('Error de conexión'))
       .finally(() => setLoading(false));
   }, [params.token]);
+
+  const handleAprobar = async () => {
+    setSubmitting(true);
+    try {
+      const res = await fetch(`${API}/api/v1/nomina/${params.token}/approve`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({}),
+      }).then(r => r.json());
+      if (res.success) { setAprobadoPor(res.aprobado_por); setAprobadoAt(res.aprobado_at); }
+      else alert(res.error || 'Error');
+    } catch { alert('Error de conexión'); }
+    setSubmitting(false);
+  };
 
   if (loading) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-gray-400" /></div>;
   if (error) return <div className="flex min-h-screen items-center justify-center text-red-500">{error}</div>;
@@ -58,11 +78,26 @@ export default function NominaPublicPage({ params }: { params: { token: string }
 
   const r11 = data.ruta11;
   const seg = data.seguridad ?? { workers: [], summary: { presupuesto: 0, total_sueldos_base: 0, total_descuentos: 0, total_creditos: 0, total_a_pagar: 0 } };
-  const r11Workers = r11.workers.filter(w => !w.rol?.includes('dueño'));
-  const segWorkers = seg.workers.filter(w => !w.rol?.includes('dueño'));
+  let r11Workers = r11.workers.filter(w => !w.rol?.includes('dueño'));
+  let segWorkers = seg.workers.filter(w => !w.rol?.includes('dueño'));
+
+  // Filter to single worker if workerId param present
+  if (workerId) {
+    const pid = parseInt(workerId, 10);
+    r11Workers = r11Workers.filter(w => w.personal_id === pid);
+    segWorkers = segWorkers.filter(w => w.personal_id === pid);
+  }
+
+  const singleWorker = workerId
+    ? [...r11Workers, ...segWorkers][0] ?? null
+    : null;
+
   const grandTotal = r11.summary.total_a_pagar + seg.summary.total_a_pagar;
 
   const buildMessage = () => {
+    if (singleWorker) {
+      return `📋 *Nómina ${fmtMonth(mes)}*\n👤 *${singleWorker.nombre}*\n💰 Total: ${fmt(singleWorker.total_a_pagar)}\n\nVer detalle 👉🏻 https://mi.laruta11.cl/nomina/${params.token}?worker=${workerId}`;
+    }
     const lines: string[] = [
       `📋 *NÓMINA ${fmtMonth(mes).toUpperCase()}*`,
       `━━━━━━━━━━`,
@@ -94,7 +129,9 @@ export default function NominaPublicPage({ params }: { params: { token: string }
     <div style={{ maxWidth: '100%', padding: '0 4px', paddingBottom: '24px' }} className="space-y-3">
       {/* Header */}
       <div className="text-center py-3 relative">
-        <h1 className="text-xl font-bold text-gray-900">📋 Nómina {fmtMonth(mes)}</h1>
+        <h1 className="text-xl font-bold text-gray-900">
+          {singleWorker ? `👤 ${singleWorker.nombre}` : `📋 Nómina ${fmtMonth(mes)}`}
+        </h1>
         <div className="inline-flex items-center gap-1.5 mt-1">
           <p className="text-xs text-gray-400">La Ruta 11{fecha ? ` — ${fecha}` : ''}</p>
           <button onClick={handleShare} title="Compartir" className="inline-flex items-center justify-center h-5 w-5 rounded-full text-gray-400 hover:text-amber-600 hover:bg-amber-50 transition-colors">
@@ -108,19 +145,51 @@ export default function NominaPublicPage({ params }: { params: { token: string }
         )}
       </div>
 
+      {/* Approval status */}
+      {aprobadoAt ? (
+        <div className="rounded-xl bg-green-50 border border-green-200 p-3 flex items-center gap-2">
+          <Check className="h-5 w-5 text-green-600 shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-green-800">Nómina aprobada</p>
+            <p className="text-xs text-green-600">
+              Por {aprobadoPor} · {new Date(aprobadoAt).toLocaleDateString('es-CL')} {new Date(aprobadoAt).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-amber-200 p-3 space-y-2">
+          <div className="flex items-center gap-2">
+            <Clock className="h-5 w-5 text-amber-500 shrink-0" />
+            <p className="text-sm font-medium text-amber-800">Nómina pendiente de aprobación</p>
+          </div>
+          <button
+            onClick={handleAprobar}
+            disabled={submitting}
+            className="flex items-center gap-1 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
+          >
+            <Check className="h-3.5 w-3.5" />
+            {submitting ? 'Aprobando...' : 'Aprobar Nómina'}
+          </button>
+        </div>
+      )}
+
       {/* ═══ LA RUTA 11 ═══ */}
-      <CentroCard title="🍔 La Ruta 11" workers={r11Workers} summary={r11.summary} mes={mes} showCredits />
+      {r11Workers.length > 0 && (
+        <CentroCard title="🍔 La Ruta 11" workers={r11Workers} summary={r11.summary} mes={mes} showCredits />
+      )}
 
       {/* ═══ CAM SEGURIDAD ═══ */}
       {segWorkers.length > 0 && (
         <CentroCard title="🔒 Cam Seguridad" workers={segWorkers} summary={seg.summary} mes={mes} />
       )}
 
-      {/* Grand total */}
-      <div className="rounded-xl bg-gray-100 p-3 text-center">
-        <p className="text-xs text-gray-500">Total Nómina La Ruta 11</p>
-        <p className="text-lg font-bold text-gray-800">{fmt(grandTotal)}</p>
-      </div>
+      {/* Grand total (only show full view, not single worker) */}
+      {!singleWorker && (
+        <div className="rounded-xl bg-gray-100 p-3 text-center">
+          <p className="text-xs text-gray-500">Total Nómina La Ruta 11</p>
+          <p className="text-lg font-bold text-gray-800">{fmt(grandTotal)}</p>
+        </div>
+      )}
     </div>
   );
 }

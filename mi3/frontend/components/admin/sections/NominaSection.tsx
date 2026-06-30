@@ -6,7 +6,7 @@ import { formatCLP, formatMonthES } from '@/lib/utils';
 import {
   ChevronLeft, ChevronRight, ChevronDown, ChevronUp,
   Loader2, Send, Mail, Trash2, DollarSign,
-  FileText, CreditCard,
+  FileText, CreditCard, Share2,
 } from 'lucide-react';
 import type { SectionHeaderConfig } from '@/components/admin/AdminShell';
 
@@ -104,6 +104,7 @@ export default function NominaSection({ onHeaderConfig }: NominaSectionProps) {
   const [r11CreditOpen, setR11CreditOpen] = useState<Set<number>>(new Set());
   const [activeTab, setActiveTab] = useState<NominaTab>('ruta11');
   const [generatingLink, setGeneratingLink] = useState(false);
+  const [snapshotToken, setSnapshotToken] = useState<string | null>(null);
 
   const mes = getMonthStr(monthOffset);
 
@@ -119,9 +120,29 @@ export default function NominaSection({ onHeaderConfig }: NominaSectionProps) {
         '/admin/payroll/snapshot',
         { method: 'POST', body: JSON.stringify({ mes }) },
       );
+      if (res.token) setSnapshotToken(res.token);
       window.open(res.url, '_blank');
     } catch (err: any) { alert(err.message); }
     finally { setGeneratingLink(false); }
+  };
+
+  const shareWorker = async (personalId: number, nombre: string) => {
+    try {
+      const res = await apiFetch<{ success: boolean; token: string; url: string }>(
+        '/admin/payroll/snapshot',
+        { method: 'POST', body: JSON.stringify({ mes }) },
+      );
+      if (res.token) setSnapshotToken(res.token);
+      const baseUrl = 'https://mi.laruta11.cl/nomina/' + res.token;
+      const shareUrl = baseUrl + '?worker=' + personalId;
+      const msg = `📋 *Nómina ${formatMonthES(mes)}*\n👤 *${nombre}*\n💰 Total: ${formatCLP(0)}\n\nVer detalle 👉🏻 ${shareUrl}`;
+      if (navigator.share) {
+        await navigator.share({ text: msg });
+      } else {
+        await navigator.clipboard.writeText(msg);
+        alert('Link copiado al portapapeles');
+      }
+    } catch (err: any) { alert(err.message); }
   };
 
   /* ─── Memoize trailing JSX to prevent infinite re-render loop ─── */
@@ -571,6 +592,13 @@ export default function NominaSection({ onHeaderConfig }: NominaSectionProps) {
                 >
                   <Mail className="h-3 w-3" />
                   {sending === w.personal_id ? 'Enviando...' : 'Email'}
+                </button>
+                <button
+                  onClick={() => shareWorker(w.personal_id, w.nombre)}
+                  className="flex items-center gap-1 rounded-lg border border-gray-300 px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
+                >
+                  <Share2 className="h-3 w-3" />
+                  Compartir
                 </button>
               </div>
             </div>

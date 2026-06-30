@@ -13,10 +13,13 @@ class NominaSnapshot extends Model
         'token',
         'mes',
         'data',
+        'aprobado_por',
+        'aprobado_at',
     ];
 
     protected $casts = [
         'data' => 'array',
+        'aprobado_at' => 'datetime',
     ];
 
     protected static function booted(): void
