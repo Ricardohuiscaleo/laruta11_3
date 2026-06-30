@@ -207,29 +207,51 @@ PROMPT;
         $costUsd = ($promptTokens * 0.075 / 1_000_000) + ($candidateTokens * 0.30 / 1_000_000);
         $costClp = round($costUsd * 950, 2); // ~950 CLP/USD
 
-        // Parse response
+        // Parse response — robust parsing like GeminiService
         $text = '';
-        $candidates = $result['candidates'] ?? [];
-        if (!empty($candidates[0]['content']['parts'][0]['text'])) {
-            $parsed = json_decode($candidates[0]['content']['parts'][0]['text'], true);
-            if (is_array($parsed)) {
-                $text = $parsed['description'] ?? $parsed['text'] ?? json_encode($parsed);
-            } else {
-                $text = $candidates[0]['content']['parts'][0]['text'];
+        $parts = $result['candidates'][0]['content']['parts'] ?? [];
+        $finishReason = $result['candidates'][0]['finishReason'] ?? 'UNKNOWN';
+        $isTruncated = in_array($finishReason, ['MAX_TOKENS', 'LENGTH'], true);
+
+        foreach ($parts as $part) {
+            if (!empty($part['thought'])) continue;
+            $partText = trim($part['text'] ?? '');
+            if ($partText === '') continue;
+
+            // Try direct JSON decode
+            $decoded = json_decode($partText, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $text = $decoded['description'] ?? '';
+                break;
             }
-        } elseif (!empty($candidates[0]['content']['parts'][0])) {
-            // Might be structured output
-            $text = json_encode($candidates[0]['content']['parts'][0]);
-            Log::info('[RecipeAIService] Gemini structured part: ' . $text);
-        } else {
-            Log::warning('[RecipeAIService] Gemini no text in response: ' . json_encode($result, JSON_UNESCAPED_UNICODE));
+
+            // Brace-based extraction
+            $firstBrace = strpos($partText, '{');
+            $lastBrace = strrpos($partText, '}');
+            if ($firstBrace !== false && $lastBrace !== false && $lastBrace > $firstBrace) {
+                $jsonText = substr($partText, $firstBrace, $lastBrace - $firstBrace + 1);
+                $decoded = json_decode($jsonText, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    $text = $decoded['description'] ?? '';
+                    break;
+                }
+            }
+
+            // Markdown ```json``` blocks
+            if (preg_match('/```(?:json)?\s*([\s\S]*?)```/', $partText, $matches)) {
+                $jsonText = trim($matches[1]);
+                $decoded = json_decode($jsonText, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    $text = $decoded['description'] ?? '';
+                    break;
+                }
+            }
         }
 
-        if (empty(trim($text))) {
+        if (empty($text)) {
+            Log::warning('[RecipeAIService] Gemini raw: ' . json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
             throw new \RuntimeException('Gemini devolvió descripción vacía');
         }
-
-        $text = trim($text);
 
         // Save to product
         $product->description = $text;
