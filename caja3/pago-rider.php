@@ -46,28 +46,46 @@ if ($orderId && $config) {
             $config['app_db_user'], $config['app_db_pass'],
             [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
         );
-        
+
         $stmt = $pdo->prepare("
-            SELECT rp.*, r.nombre as rider_nombre,
-                   GROUP_CONCAT(DISTINCT o.order_number SEPARATOR ', ') as order_numbers,
-                   GROUP_CONCAT(DISTINCT o.delivery_address SEPARATOR ' | ') as delivery_addresses,
-                   MIN(o.created_at) as order_created_at
+            SELECT rp.id, rp.order_id, rp.monto, rp.comprobante_url, rp.metodo_pago, rp.fecha, rp.token,
+                   r.nombre as rider_nombre, r.id as rider_id,
+                   o.order_number, o.delivery_address, o.delivery_fee, o.card_surcharge,
+                   o.customer_name, o.customer_phone,
+                   o.created_at as order_created_at
             FROM rider_pagos rp
             JOIN riders r ON rp.rider_id = r.id
             LEFT JOIN tuu_orders o ON rp.order_id = o.id
             WHERE rp.token = ?
-            GROUP BY rp.id
-            ORDER BY rp.id DESC
+            ORDER BY o.created_at ASC
         ");
         $stmt->execute([$token]);
-        $pagos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($pagos as &$p) {
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows as &$p) {
             if (strpos($p['comprobante_url'] ?? '', '/uploads/') === 0) $p['comprobante_url'] = null;
         }
         unset($p);
-        
-        if (empty($pagos)) {
+
+        if (empty($rows)) {
             $error = 'Pago no encontrado';
+        } else {
+            $pagos[] = [
+                'rider_nombre' => $rows[0]['rider_nombre'],
+                'rider_id' => $rows[0]['rider_id'],
+                'metodo_pago' => $rows[0]['metodo_pago'],
+                'comprobante_url' => $rows[0]['comprobante_url'],
+                'fecha' => $rows[0]['fecha'],
+                'monto' => array_sum(array_column($rows, 'monto')),
+                'orders' => array_map(fn($r) => [
+                    'order_number' => $r['order_number'],
+                    'delivery_address' => $r['delivery_address'],
+                    'delivery_fee' => $r['delivery_fee'],
+                    'card_surcharge' => $r['card_surcharge'],
+                    'customer_name' => $r['customer_name'],
+                    'order_created_at' => $r['order_created_at'],
+                    'amount' => $r['monto'],
+                ], $rows),
+            ];
         }
     } catch (Exception $e) {
         $error = 'Error al cargar datos';
@@ -78,16 +96,18 @@ if ($orderId && $config) {
 
 if (!empty($pagos)) {
     $first = $pagos[0];
-    $first['order_created_at'] = $first['order_created_at'] ?? null;
     $shareRider = htmlspecialchars($first['rider_nombre']);
     $shareAmount = '$' . number_format($first['monto'], 0, ',', '.');
-    $orderNumbers = $first['order_numbers'] ?? '';
-    $orderDate = $first['order_created_at'] ? (new DateTime($first['order_created_at'], new DateTimeZone('UTC')))->setTimezone(new DateTimeZone('Etc/GMT+3'))->format('d/m/Y H:i') : '';
-    $shareAddress = $first['delivery_addresses'] ?? '';
+    $orderNumbers = implode(', ', array_filter(array_column($first['orders'], 'order_number')));
+    $orderDates = array_filter(array_column($first['orders'], 'order_created_at'));
+    $orderDate = !empty($orderDates)
+        ? (new DateTime(min($orderDates), new DateTimeZone('UTC')))->setTimezone(new DateTimeZone('Etc/GMT+3'))->format('d/m/Y')
+        : date('d/m/Y', strtotime($first['fecha']));
     $shareMethod = $first['metodo_pago'] === 'transferencia' ? 'Transferencia' : 'Efectivo';
-    $shareTitle = "🛵 Pago Delivery · {$shareRider} · {$shareAmount}";
-    $shareDesc = "{$shareRider} · {$shareAmount} · {$orderDate} · {$orderNumbers} · {$shareMethod}";
-    $shareMetaDesc = "{$shareRider} | {$shareAmount} | {$orderDate} | {$orderNumbers} | {$shareAddress}";
+    $orderCount = count($first['orders']);
+    $shareTitle = "🛵 Pago Delivery · {$shareRider} · {$shareAmount} · {$orderCount} " . ($orderCount === 1 ? 'entrega' : 'entregas');
+    $shareDesc = "{$shareRider} · {$shareAmount} · {$orderCount} " . ($orderCount === 1 ? 'entrega' : 'entregas') . " · {$orderDate} · {$shareMethod}";
+    $shareMetaDesc = "{$shareRider} | {$shareAmount} | {$orderCount} " . ($orderCount === 1 ? 'entrega' : 'entregas') . " | {$orderNumbers} | {$orderDate} | {$shareMethod}";
 }
 
 $pageUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . "://{$_SERVER['HTTP_HOST']}{$_SERVER['REQUEST_URI']}";
@@ -150,7 +170,7 @@ $pageUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : '
                 <div class="card-row">
                     <div>
                         <div class="card-name"><?= htmlspecialchars($pago['rider_nombre']) ?></div>
-                        <div class="card-date"><?= $pago['order_created_at'] ? (new DateTime($pago['order_created_at'], new DateTimeZone('UTC')))->setTimezone(new DateTimeZone('Etc/GMT+3'))->format('d/m/Y H:i') : date('d/m/Y', strtotime($pago['fecha'])) ?></div>
+                        <div class="card-date"><?= $pago['fecha'] ? date('d/m/Y', strtotime($pago['fecha'])) : '' ?></div>
                     </div>
                     <div style="text-align:right;">
                         <div class="card-amount">$<?= number_format($pago['monto'], 0, ',', '.') ?></div>
@@ -160,13 +180,31 @@ $pageUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : '
 
                 <div class="card-divider">
                     <div class="card-info">Método de pago: <strong><?= $pago['metodo_pago'] === 'transferencia' ? 'Transferencia' : 'Efectivo' ?></strong></div>
-                    <?php if ($pago['order_numbers']): ?>
-                        <div class="card-info">Órdenes: <strong><?= htmlspecialchars($pago['order_numbers']) ?></strong></div>
-                    <?php endif; ?>
-                    <?php if ($pago['delivery_addresses']): ?>
-                        <div class="card-info">Direcciones: <strong><?= htmlspecialchars($pago['delivery_addresses']) ?></strong></div>
-                    <?php endif; ?>
                 </div>
+
+                <?php if (!empty($pago['orders'])): ?>
+                <div class="card-divider">
+                    <div class="card-info" style="font-weight:700;color:#374151;margin-bottom:8px;">
+                        Entregas (<?= count($pago['orders']) ?>)
+                    </div>
+                    <?php foreach ($pago['orders'] as $order): ?>
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:1px solid #f3f4f6;font-size:12px;gap:8px;">
+                        <div style="flex:1;min-width:0;">
+                            <?php if ($order['order_number']): ?>
+                                <div style="font-weight:700;color:#374151;"><?= htmlspecialchars($order['order_number']) ?></div>
+                            <?php endif; ?>
+                            <?php if ($order['customer_name']): ?>
+                                <div style="font-size:11px;color:#6b7280;"><?= htmlspecialchars($order['customer_name']) ?></div>
+                            <?php endif; ?>
+                            <?php if ($order['delivery_address']): ?>
+                                <div style="font-size:11px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><?= htmlspecialchars($order['delivery_address']) ?></div>
+                            <?php endif; ?>
+                        </div>
+                        <div style="font-weight:700;color:#059669;white-space:nowrap;">$<?= number_format($order['amount'] + ($order['card_surcharge'] ?? 0), 0, ',', '.') ?></div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
 
                 <?php if ($pago['comprobante_url']): ?>
                 <div class="card-divider">
