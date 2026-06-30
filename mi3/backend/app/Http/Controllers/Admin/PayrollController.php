@@ -455,12 +455,16 @@ class PayrollController extends Controller
     {
         $snapshot = NominaSnapshot::where('token', $token)->firstOrFail();
 
-        $confirmados = NominaConfirmacion::whereHas('snapshot', fn($q) => $q->where('mes', $snapshot->mes))
+        $confirmaciones = NominaConfirmacion::whereHas('snapshot', fn($q) => $q->where('mes', $snapshot->mes))
             ->whereNotNull('confirmado_at')
-            ->pluck('personal_id')
-            ->map(fn($id) => (int) $id)
-            ->values()
-            ->toArray();
+            ->get(['personal_id', 'confirmado_at']);
+
+        $confirmados = $confirmaciones->map(fn($c) => [
+            'personal_id' => (int) $c->personal_id,
+            'confirmado_at' => $c->confirmado_at instanceof \Carbon\Carbon
+                ? $c->confirmado_at->toIso8601String()
+                : $c->confirmado_at,
+        ])->values()->toArray();
 
         return response()->json([
             'success' => true,
@@ -519,7 +523,10 @@ class PayrollController extends Controller
             \Illuminate\Support\Facades\Log::warning('Broadcast confirmWorker: ' . $e->getMessage());
         }
 
-        return response()->json(['success' => true]);
+        return response()->json([
+            'success' => true,
+            'confirmado_at' => now()->toIso8601String(),
+        ]);
     }
 
     /**

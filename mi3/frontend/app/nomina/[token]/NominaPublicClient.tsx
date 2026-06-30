@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Loader2, Share2, ChevronDown, ChevronUp, ChevronRight, Wallet, TrendingDown, CreditCard, ArrowUpRight, ArrowDownRight, Check, X, Clock } from 'lucide-react';
+import { Loader2, Share2, ChevronDown, ChevronUp, ChevronRight, Wallet, TrendingDown, CreditCard, ArrowUpRight, ArrowDownRight, Check, X } from 'lucide-react';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://api-mi3.laruta11.cl';
 const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-CL');
@@ -45,7 +45,7 @@ interface Props {
   initialCreatedAt?: string;
   initialAprobadoPor?: string | null;
   initialAprobadoAt?: string | null;
-  initialConfirmados?: number[];
+  initialConfirmados?: Array<{ personal_id: number; confirmado_at: string }>;
 }
 
 export default function NominaPublicClient({ params, initialData, initialMes, initialCreatedAt, initialAprobadoPor, initialAprobadoAt, initialConfirmados }: Props) {
@@ -62,7 +62,9 @@ export default function NominaPublicClient({ params, initialData, initialMes, in
   const [copied, setCopied] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [confirmingWorker, setConfirmingWorker] = useState(false);
-  const [confirmedIds, setConfirmedIds] = useState<Set<number>>(new Set(initialConfirmados ?? []));
+  const [confirmedMap, setConfirmedMap] = useState<Map<number, string>>(
+    new Map((initialConfirmados ?? []).map(c => [c.personal_id, c.confirmado_at]))
+  );
 
   // Fetch on mount only if no initial data (e.g. direct link without SSR)
   useEffect(() => {
@@ -73,7 +75,7 @@ export default function NominaPublicClient({ params, initialData, initialMes, in
         if (d.success) {
           setMes(d.mes); setData(d.data); setCreatedAt(d.created_at);
           setAprobadoPor(d.aprobado_por); setAprobadoAt(d.aprobado_at);
-          setConfirmedIds(new Set<number>(d.confirmados ?? []));
+          setConfirmedMap(new Map((d.confirmados ?? []).map((c: any) => [c.personal_id, c.confirmado_at])));
         } else setError('Nómina no encontrada');
       })
       .catch(() => setError('Error de conexión'))
@@ -88,7 +90,7 @@ export default function NominaPublicClient({ params, initialData, initialMes, in
         method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({ personal_id: parseInt(workerId, 10) }),
       }).then(r => r.json());
-      if (res.success) setConfirmedIds(prev => new Set(prev).add(parseInt(workerId!, 10)));
+      if (res.success) setConfirmedMap(prev => new Map(prev).set(parseInt(workerId!, 10), res.confirmado_at));
       else alert(res.error || 'Error');
     } catch { alert('Error de conexión'); }
     setConfirmingWorker(false);
@@ -193,42 +195,14 @@ export default function NominaPublicClient({ params, initialData, initialMes, in
         )}
       </div>
 
-      {/* Approval status (only when viewing full nomina) */}
-      {!singleWorker && (aprobadoAt ? (
-        <div className="rounded-xl bg-green-50 border border-green-200 p-3 flex items-center gap-2">
-          <Check className="h-5 w-5 text-green-600 shrink-0" />
-          <div>
-            <p className="text-sm font-medium text-green-800">Nómina aprobada</p>
-            <p className="text-xs text-green-600">
-              Por {aprobadoPor} · {new Date(aprobadoAt).toLocaleDateString('es-CL')} {new Date(aprobadoAt).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="rounded-xl border border-amber-200 p-3 space-y-2">
-          <div className="flex items-center gap-2">
-            <Clock className="h-5 w-5 text-amber-500 shrink-0" />
-            <p className="text-sm font-medium text-amber-800">Nómina pendiente de aprobación</p>
-          </div>
-          <button
-            onClick={handleAprobar}
-            disabled={submitting}
-            className="flex items-center gap-1 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
-          >
-            <Check className="h-3.5 w-3.5" />
-            {submitting ? 'Aprobando...' : 'Aprobar Nómina'}
-          </button>
-        </div>
-      ))}
-
       {/* ═══ LA RUTA 11 ═══ */}
       {r11Workers.length > 0 && (
-        <CentroCard title="🍔 La Ruta 11" workers={r11Workers} summary={r11Summary} mes={mes} showCredits />
+        <CentroCard title="🍔 La Ruta 11" workers={r11Workers} summary={r11Summary} mes={mes} showCredits confirmados={confirmedMap} />
       )}
 
       {/* ═══ CAM SEGURIDAD ═══ */}
       {segWorkers.length > 0 && (
-        <CentroCard title="🔒 Cam Seguridad" workers={segWorkers} summary={segSummary} mes={mes} />
+        <CentroCard title="🔒 Cam Seguridad" workers={segWorkers} summary={segSummary} mes={mes} confirmados={confirmedMap} />
       )}
 
       {/* Grand total (only show full view, not single worker) */}
@@ -240,7 +214,7 @@ export default function NominaPublicClient({ params, initialData, initialMes, in
       )}
 
       {/* Worker confirmation footer */}
-      {singleWorker && !confirmedIds.has(singleWorker.personal_id) && (
+      {singleWorker && !confirmedMap.has(singleWorker.personal_id) && (
         <div className="rounded-xl border bg-white shadow-sm p-4 space-y-3">
           <p className="text-sm font-semibold text-gray-800 text-center">
             ¿Estás de acuerdo con recibir <span className="text-amber-700">{fmt(singleWorker.total_a_pagar)}</span>?
@@ -267,10 +241,13 @@ export default function NominaPublicClient({ params, initialData, initialMes, in
         </div>
       )}
 
-      {singleWorker && confirmedIds.has(singleWorker.personal_id) && (
+      {singleWorker && confirmedMap.has(singleWorker.personal_id) && (
         <div className="rounded-xl bg-green-50 border border-green-200 p-3 flex items-center gap-2">
           <Check className="h-5 w-5 text-green-600 shrink-0" />
-          <p className="text-sm font-medium text-green-800">Confirmaste estar de acuerdo con este pago</p>
+          <div>
+            <p className="text-sm font-medium text-green-800">Confirmaste estar de acuerdo con este pago</p>
+            <p className="text-xs text-green-600">{new Date(confirmedMap.get(singleWorker.personal_id)!).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })} a las {new Date(confirmedMap.get(singleWorker.personal_id)!).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</p>
+          </div>
         </div>
       )}
     </div>
@@ -279,12 +256,13 @@ export default function NominaPublicClient({ params, initialData, initialMes, in
 
 /* ─── Centro Card ─── */
 
-function CentroCard({ title, workers, summary, mes, showCredits }: {
+function CentroCard({ title, workers, summary, mes, showCredits, confirmados }: {
   title: string;
   workers: Worker[];
   summary: CentroData['summary'];
   mes: string;
   showCredits?: boolean;
+  confirmados?: Map<number, string>;
 }) {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [r11Open, setR11Open] = useState<Set<number>>(new Set());
@@ -325,9 +303,14 @@ function CentroCard({ title, workers, summary, mes, showCredits }: {
                     ) : (
                       <div className="w-4 shrink-0" />
                     )}
-                    <div>
+                    <div className="flex items-center flex-wrap gap-x-1">
                       <span className="text-sm font-semibold text-gray-800">{w.nombre}</span>
-                      <span className="ml-1.5 text-[10px] text-gray-400 capitalize">{w.rol}</span>
+                      {confirmados?.has(w.personal_id) && (
+                        <span className="inline-flex items-center gap-0.5 text-[10px] text-green-700 bg-green-50 rounded-full px-1.5 py-0.5">
+                          <Check className="h-2.5 w-2.5" /> {new Date(confirmados.get(w.personal_id)!).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      )}
+                      <span className="text-[10px] text-gray-400 capitalize ml-0.5">{w.rol}</span>
                     </div>
                   </div>
                   <span className="text-sm font-bold tabular-nums">{fmt(w.total_a_pagar)}</span>

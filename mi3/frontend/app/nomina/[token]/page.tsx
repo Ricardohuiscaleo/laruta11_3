@@ -72,7 +72,7 @@ export default async function NominaPublicPage(props: Props) {
   let initialCreatedAt = '';
   let initialAprobadoPor: string | null = null;
   let initialAprobadoAt: string | null = null;
-  let initialConfirmados: number[] = [];
+  let initialConfirmados: Array<{ personal_id: number; confirmado_at: string }> = [];
 
   try {
     const res = await fetch(`${API}/api/v1/nomina/${props.params.token}`, {
