@@ -17,16 +17,20 @@ function fmtMonth(mes: string) {
   const [y, m] = mes.split('-');
   return `${MONTH_NAMES[parseInt(m, 10) - 1]} ${y}`;
 }
+function fmtProductName(name: string): string {
+  return name.replace(/^1 productos/, '1 producto').replace(/\sx1(?=[,\s]|$)/g, '');
+}
 
 interface AjusteDetail { id: number; monto: number; concepto: string; categoria: string; }
 interface ReplacementGroup { personal_id: number; nombre: string; dias: number[]; monto: number; }
+interface R11Compra { orden: string; producto: string; monto: number; fecha: string; }
 interface Worker {
   personal_id: number; nombre: string; rol: string; sueldo_base: number;
   dias_trabajados: number; dias_normales?: number; total_reemplazando: number; total_reemplazado: number;
   reemplazos_realizados: ReplacementGroup[]; reemplazos_recibidos: ReplacementGroup[];
   descuentos: AjusteDetail[]; bonos: AjusteDetail[];
   total_descuentos: number; total_bonos: number;
-  credito_r11_pendiente: number; total_a_pagar: number;
+  credito_r11_pendiente: number; r11_compras?: R11Compra[]; total_a_pagar: number;
 }
 interface CentroData {
   workers: Worker[];
@@ -58,6 +62,29 @@ export default function NominaPublicPage({ params }: { params: { token: string }
       .catch(() => setError('Error de conexión'))
       .finally(() => setLoading(false));
   }, [params.token]);
+
+  // OG metadata for single worker view
+  useEffect(() => {
+    if (!data || !mes) return;
+    const seg = data.seguridad ?? { workers: [] };
+    const allWorkers = [
+      ...(data.ruta11?.workers ?? []).filter(w => !w.rol?.includes('dueño')),
+      ...seg.workers.filter(w => !w.rol?.includes('dueño')),
+    ];
+    const w = workerId ? allWorkers.find(w => w.personal_id === parseInt(workerId, 10)) : null;
+    if (w) {
+      document.title = `Nómina ${w.nombre} — ${fmtMonth(mes)} — La Ruta 11`;
+      const setMeta = (name: string, content: string) => {
+        let el = document.querySelector(`meta[property="${name}"]`) as HTMLMetaElement | null;
+        if (!el) { el = document.createElement('meta'); el.setAttribute('property', name); document.head.appendChild(el); }
+        el.setAttribute('content', content);
+      };
+      setMeta('og:title', `${w.nombre} — ${fmtMonth(mes)}`);
+      setMeta('og:description', `Total a pagar: $${Math.round(w.total_a_pagar).toLocaleString('es-CL')}`);
+      setMeta('og:url', `https://mi.laruta11.cl/nomina/${params.token}?worker=${workerId}`);
+      setMeta('og:type', 'website');
+    }
+  }, [data, mes, workerId, params.token]);
 
   const handleAprobar = async () => {
     setSubmitting(true);
@@ -204,6 +231,7 @@ function CentroCard({ title, workers, summary, mes, showCredits }: {
   showCredits?: boolean;
 }) {
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [r11Open, setR11Open] = useState<Set<number>>(new Set());
 
   return (
     <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
@@ -323,9 +351,35 @@ function CentroCard({ title, workers, summary, mes, showCredits }: {
                     </div>
                   )}
                   {w.credito_r11_pendiente > 0 && (
-                    <div className="flex justify-between rounded bg-orange-50 px-2 py-1">
-                      <span>💳 Crédito R11 pendiente</span>
-                      <span className="font-semibold text-red-600">-{fmt(w.credito_r11_pendiente)}</span>
+                    <div className="rounded-lg bg-orange-50 border border-orange-200 overflow-hidden">
+                      <button
+                        onClick={() => setR11Open(prev => {
+                          const next = new Set(prev);
+                          next.has(w.personal_id) ? next.delete(w.personal_id) : next.add(w.personal_id);
+                          return next;
+                        })}
+                        className="flex items-center justify-between w-full px-2 py-1.5 text-xs text-left"
+                      >
+                        <div className="flex items-center gap-1">
+                          <ChevronRight className={`h-3.5 w-3.5 text-orange-500 transition-transform ${r11Open.has(w.personal_id) ? 'rotate-90' : ''}`} />
+                          <CreditCard className="h-3.5 w-3.5 text-orange-500" />
+                          <span className="font-medium">Crédito R11 pendiente</span>
+                        </div>
+                        <span className="font-semibold text-red-600">-{fmt(w.credito_r11_pendiente)}</span>
+                      </button>
+                      {r11Open.has(w.personal_id) && w.r11_compras && w.r11_compras.length > 0 && (
+                        <div className="border-t border-orange-200 divide-y divide-orange-200">
+                          {w.r11_compras.map((c, i) => (
+                            <div key={i} className="flex items-center justify-between px-2 py-1 text-[11px]">
+                              <div className="flex-1 min-w-0">
+                                <p className="truncate font-medium text-gray-700">{fmtProductName(c.producto)}</p>
+                                <p className="text-gray-400">{new Date(c.fecha).toLocaleDateString('es-CL')} · {c.orden}</p>
+                              </div>
+                              <span className="shrink-0 ml-2 font-semibold text-gray-700">{fmt(c.monto)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

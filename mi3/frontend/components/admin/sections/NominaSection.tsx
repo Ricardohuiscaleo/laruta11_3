@@ -79,6 +79,10 @@ type NominaTab = 'ruta11' | 'seguridad';
 
 /* ─── Helpers ─── */
 
+function fmtProductName(name: string): string {
+  return name.replace(/^1 productos/, '1 producto').replace(/\sx1(?=[,\s]|$)/g, '');
+}
+
 function getMonthStr(offset: number) {
   const d = new Date();
   d.setMonth(d.getMonth() + offset);
@@ -133,15 +137,9 @@ export default function NominaSection({ onHeaderConfig }: NominaSectionProps) {
         { method: 'POST', body: JSON.stringify({ mes }) },
       );
       if (res.token) setSnapshotToken(res.token);
-      const baseUrl = 'https://mi.laruta11.cl/nomina/' + res.token;
-      const shareUrl = baseUrl + '?worker=' + personalId;
-      const msg = `📋 *Nómina ${formatMonthES(mes)}*\n👤 *${nombre}*\n💰 Total: ${formatCLP(totalAPagar)}\n\nVer detalle 👉🏻 ${shareUrl}`;
-      if (navigator.share) {
-        await navigator.share({ text: msg });
-      } else {
-        await navigator.clipboard.writeText(msg);
-        alert('Link copiado al portapapeles');
-      }
+      const shareUrl = 'https://mi.laruta11.cl/nomina/' + res.token + '?worker=' + personalId;
+      await navigator.clipboard.writeText(shareUrl);
+      alert('Link copiado: ' + shareUrl);
     } catch (err: any) { alert(err.message); }
   };
 
@@ -524,7 +522,7 @@ export default function NominaSection({ onHeaderConfig }: NominaSectionProps) {
                           {w.r11_compras.map((c, i) => (
                             <div key={i} className="flex items-center justify-between px-2 py-1 text-[11px]">
                               <div className="flex-1 min-w-0">
-                                <p className="truncate font-medium text-gray-700">{c.producto}</p>
+                                <p className="truncate font-medium text-gray-700">{fmtProductName(c.producto)}</p>
                                 <p className="text-gray-400">{new Date(c.fecha).toLocaleDateString('es-CL')} · {c.orden}</p>
                               </div>
                               <span className="shrink-0 ml-2 font-semibold text-gray-700">{formatCLP(c.monto)}</span>
