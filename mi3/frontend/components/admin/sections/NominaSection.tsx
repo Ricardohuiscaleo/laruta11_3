@@ -383,7 +383,7 @@ export default function NominaSection({ onHeaderConfig }: NominaSectionProps) {
                         {w.nombre}
                         {w.confirmado && (
                           <span className="inline-flex items-center rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700">
-                            <Check className="h-2.5 w-2.5 mr-0.5" /> {w.confirmado_at ? new Date(w.confirmado_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) : 'Confirmado'}
+                            <Check className="h-2.5 w-2.5 mr-0.5" /> {w.confirmado_at ? `Confirmado el ${new Date(w.confirmado_at).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })} a las ${new Date(w.confirmado_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}` : 'Confirmado'}
                           </span>
                         )}
                       </h3>
