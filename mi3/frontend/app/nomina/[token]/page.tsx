@@ -270,7 +270,7 @@ export default function NominaPublicPage({ params }: { params: { token: string }
               {confirmingWorker ? 'Confirmando...' : 'Aprobar'}
             </button>
             <a
-              href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`Hola, tengo dudas sobre mi nómina de ${fmtMonth(mes)}. Revisa el detalle aquí: https://mi.laruta11.cl/nomina/${params.token}?worker=${workerId}`)}`}
+              href={`https://wa.me/56945392581?text=${encodeURIComponent(`Hola, tengo dudas sobre mi nómina de ${fmtMonth(mes)}. Revisa el detalle aquí: https://mi.laruta11.cl/nomina/${params.token}?worker=${workerId}`)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 flex items-center justify-center gap-1 rounded-lg border border-red-300 px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50"
