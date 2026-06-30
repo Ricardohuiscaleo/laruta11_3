@@ -263,14 +263,6 @@ export default function NominaPublicPage({ params }: { params: { token: string }
             ¿Estás de acuerdo con recibir <span className="text-amber-700">{fmt(singleWorker.total_a_pagar)}</span>?
           </p>
           <div className="flex gap-3">
-            <button
-              onClick={handleConfirmWorker}
-              disabled={confirmingWorker}
-              className="flex-1 flex items-center justify-center gap-1 rounded-lg bg-green-600 px-3 py-2.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
-            >
-              <Check className="h-4 w-4" />
-              {confirmingWorker ? 'Confirmando...' : 'Aprobar'}
-            </button>
             <a
               href={`https://wa.me/56945392581?text=${encodeURIComponent(`Hola, tengo dudas sobre mi nómina de ${fmtMonth(mes)}. Revisa el detalle aquí: https://mi.laruta11.cl/nomina/${params.token}?worker=${workerId}`)}`}
               target="_blank"
@@ -280,6 +272,14 @@ export default function NominaPublicPage({ params }: { params: { token: string }
               <X className="h-4 w-4" />
               Rechazar
             </a>
+            <button
+              onClick={handleConfirmWorker}
+              disabled={confirmingWorker}
+              className="flex-1 flex items-center justify-center gap-1 rounded-lg bg-green-600 px-3 py-2.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
+            >
+              <Check className="h-4 w-4" />
+              {confirmingWorker ? 'Confirmando...' : 'Aprobar'}
+            </button>
           </div>
         </div>
       )}
