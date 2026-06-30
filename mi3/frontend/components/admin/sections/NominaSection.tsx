@@ -126,7 +126,7 @@ export default function NominaSection({ onHeaderConfig }: NominaSectionProps) {
     finally { setGeneratingLink(false); }
   };
 
-  const shareWorker = async (personalId: number, nombre: string) => {
+  const shareWorker = async (personalId: number, nombre: string, totalAPagar: number) => {
     try {
       const res = await apiFetch<{ success: boolean; token: string; url: string }>(
         '/admin/payroll/snapshot',
@@ -135,7 +135,7 @@ export default function NominaSection({ onHeaderConfig }: NominaSectionProps) {
       if (res.token) setSnapshotToken(res.token);
       const baseUrl = 'https://mi.laruta11.cl/nomina/' + res.token;
       const shareUrl = baseUrl + '?worker=' + personalId;
-      const msg = `📋 *Nómina ${formatMonthES(mes)}*\n👤 *${nombre}*\n💰 Total: ${formatCLP(0)}\n\nVer detalle 👉🏻 ${shareUrl}`;
+      const msg = `📋 *Nómina ${formatMonthES(mes)}*\n👤 *${nombre}*\n💰 Total: ${formatCLP(totalAPagar)}\n\nVer detalle 👉🏻 ${shareUrl}`;
       if (navigator.share) {
         await navigator.share({ text: msg });
       } else {
@@ -594,7 +594,7 @@ export default function NominaSection({ onHeaderConfig }: NominaSectionProps) {
                   {sending === w.personal_id ? 'Enviando...' : 'Email'}
                 </button>
                 <button
-                  onClick={() => shareWorker(w.personal_id, w.nombre)}
+                  onClick={() => shareWorker(w.personal_id, w.nombre, w.total_a_pagar)}
                   className="flex items-center gap-1 rounded-lg border border-gray-300 px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
                 >
                   <Share2 className="h-3 w-3" />
