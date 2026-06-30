@@ -7,11 +7,11 @@ import { Loader2, Share2, ChevronDown, ChevronUp, ChevronRight, Wallet, Trending
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://api-mi3.laruta11.cl';
 const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-CL');
 
-const MONTH_SHORT = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 const MONTH_NAMES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 function fmtDias(dias: number[], mes: string) {
-  const m = parseInt(mes.split('-')[1], 10) - 1;
-  return dias.map(d => `${d} ${MONTH_SHORT[m]}`).join(', ');
+  const [y, m] = mes.split('-');
+  const monthIdx = parseInt(m, 10) - 1;
+  return dias.map(d => `${d} de ${MONTH_NAMES[monthIdx].toLowerCase()} del ${y}`).join(', ');
 }
 function fmtMonth(mes: string) {
   const [y, m] = mes.split('-');
@@ -208,8 +208,8 @@ export default function NominaPublicPage({ params }: { params: { token: string }
         )}
       </div>
 
-      {/* Approval status */}
-      {aprobadoAt ? (
+      {/* Approval status (only when viewing full nomina) */}
+      {!singleWorker && (aprobadoAt ? (
         <div className="rounded-xl bg-green-50 border border-green-200 p-3 flex items-center gap-2">
           <Check className="h-5 w-5 text-green-600 shrink-0" />
           <div>
@@ -234,7 +234,7 @@ export default function NominaPublicPage({ params }: { params: { token: string }
             {submitting ? 'Aprobando...' : 'Aprobar Nómina'}
           </button>
         </div>
-      )}
+      ))}
 
       {/* ═══ LA RUTA 11 ═══ */}
       {r11Workers.length > 0 && (
