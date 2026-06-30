@@ -25,12 +25,12 @@ interface AjusteDetail { id: number; monto: number; concepto: string; categoria:
 interface ReplacementGroup { personal_id: number; nombre: string; dias: number[]; monto: number; }
 interface R11Compra { orden: string; producto: string; monto: number; fecha: string; }
 interface Worker {
-  personal_id: number; nombre: string; rol: string; sueldo_base: number;
+  personal_id: number; nombre: string; telefono?: string; rol: string; sueldo_base: number;
   dias_trabajados: number; dias_normales?: number; total_reemplazando: number; total_reemplazado: number;
   reemplazos_realizados: ReplacementGroup[]; reemplazos_recibidos: ReplacementGroup[];
   descuentos: AjusteDetail[]; bonos: AjusteDetail[];
   total_descuentos: number; total_bonos: number;
-  credito_r11_pendiente: number; r11_compras?: R11Compra[]; total_a_pagar: number;
+  credito_r11_pendiente: number; r11_compras?: R11Compra[]; total_a_pagar: number; confirmado?: boolean;
 }
 interface CentroData {
   workers: Worker[];
@@ -51,13 +51,24 @@ export default function NominaPublicPage({ params }: { params: { token: string }
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [confirmingWorker, setConfirmingWorker] = useState(false);
+  const [confirmedIds, setConfirmedIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     fetch(`${API}/api/v1/nomina/${params.token}`, { headers: { Accept: 'application/json' } })
       .then(r => r.json())
       .then(d => {
-        if (d.success) { setMes(d.mes); setData(d.data); setCreatedAt(d.created_at); setAprobadoPor(d.aprobado_por); setAprobadoAt(d.aprobado_at); }
-        else setError('Nómina no encontrada');
+        if (d.success) {
+          setMes(d.mes); setData(d.data); setCreatedAt(d.created_at);
+          setAprobadoPor(d.aprobado_por); setAprobadoAt(d.aprobado_at);
+          const cids = new Set<number>();
+          for (const centro of ['ruta11', 'seguridad']) {
+            for (const w of (d.data?.[centro]?.workers ?? [])) {
+              if (w.confirmado) cids.add(w.personal_id);
+            }
+          }
+          setConfirmedIds(cids);
+        } else setError('Nómina no encontrada');
       })
       .catch(() => setError('Error de conexión'))
       .finally(() => setLoading(false));
@@ -85,6 +96,20 @@ export default function NominaPublicPage({ params }: { params: { token: string }
       setMeta('og:type', 'website');
     }
   }, [data, mes, workerId, params.token]);
+
+  const handleConfirmWorker = async () => {
+    if (!workerId) return;
+    setConfirmingWorker(true);
+    try {
+      const res = await fetch(`${API}/api/v1/nomina/${params.token}/confirm-worker`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ personal_id: parseInt(workerId, 10) }),
+      }).then(r => r.json());
+      if (res.success) setConfirmedIds(prev => new Set(prev).add(parseInt(workerId!, 10)));
+      else alert(res.error || 'Error');
+    } catch { alert('Error de conexión'); }
+    setConfirmingWorker(false);
+  };
 
   const handleAprobar = async () => {
     setSubmitting(true);
@@ -118,6 +143,17 @@ export default function NominaPublicPage({ params }: { params: { token: string }
   const singleWorker = workerId
     ? [...r11Workers, ...segWorkers][0] ?? null
     : null;
+
+  // Build filtered summaries so CentroCard shows correct total
+  const makeFilteredSummary = (workers: Worker[], original: CentroData['summary']) => {
+    if (workers.length === 1) {
+      const w = workers[0];
+      return { ...original, total_a_pagar: w.total_a_pagar, total_sueldos_base: w.sueldo_base, total_descuentos: w.total_descuentos, total_creditos: w.credito_r11_pendiente };
+    }
+    return original;
+  };
+  const r11Summary = singleWorker && r11Workers.length === 1 ? makeFilteredSummary(r11Workers, r11.summary) : r11.summary;
+  const segSummary = singleWorker && segWorkers.length === 1 ? makeFilteredSummary(segWorkers, seg.summary) : seg.summary;
 
   const grandTotal = r11.summary.total_a_pagar + seg.summary.total_a_pagar;
 
@@ -202,12 +238,12 @@ export default function NominaPublicPage({ params }: { params: { token: string }
 
       {/* ═══ LA RUTA 11 ═══ */}
       {r11Workers.length > 0 && (
-        <CentroCard title="🍔 La Ruta 11" workers={r11Workers} summary={r11.summary} mes={mes} showCredits />
+        <CentroCard title="🍔 La Ruta 11" workers={r11Workers} summary={r11Summary} mes={mes} showCredits />
       )}
 
       {/* ═══ CAM SEGURIDAD ═══ */}
       {segWorkers.length > 0 && (
-        <CentroCard title="🔒 Cam Seguridad" workers={segWorkers} summary={seg.summary} mes={mes} />
+        <CentroCard title="🔒 Cam Seguridad" workers={segWorkers} summary={segSummary} mes={mes} />
       )}
 
       {/* Grand total (only show full view, not single worker) */}
@@ -215,6 +251,41 @@ export default function NominaPublicPage({ params }: { params: { token: string }
         <div className="rounded-xl bg-gray-100 p-3 text-center">
           <p className="text-xs text-gray-500">Total Nómina La Ruta 11</p>
           <p className="text-lg font-bold text-gray-800">{fmt(grandTotal)}</p>
+        </div>
+      )}
+
+      {/* Worker confirmation footer */}
+      {singleWorker && !confirmedIds.has(singleWorker.personal_id) && (
+        <div className="rounded-xl border bg-white shadow-sm p-4 space-y-3">
+          <p className="text-sm font-semibold text-gray-800 text-center">
+            ¿Estás de acuerdo con recibir <span className="text-amber-700">{fmt(singleWorker.total_a_pagar)}</span>?
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={handleConfirmWorker}
+              disabled={confirmingWorker}
+              className="flex-1 flex items-center justify-center gap-1 rounded-lg bg-green-600 px-3 py-2.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
+            >
+              <Check className="h-4 w-4" />
+              {confirmingWorker ? 'Confirmando...' : 'Aprobar'}
+            </button>
+            <a
+              href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`Hola, tengo dudas sobre mi nómina de ${fmtMonth(mes)}. Revisa el detalle aquí: https://mi.laruta11.cl/nomina/${params.token}?worker=${workerId}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 flex items-center justify-center gap-1 rounded-lg border border-red-300 px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50"
+            >
+              <X className="h-4 w-4" />
+              Rechazar
+            </a>
+          </div>
+        </div>
+      )}
+
+      {singleWorker && confirmedIds.has(singleWorker.personal_id) && (
+        <div className="rounded-xl bg-green-50 border border-green-200 p-3 flex items-center gap-2">
+          <Check className="h-5 w-5 text-green-600 shrink-0" />
+          <p className="text-sm font-medium text-green-800">Confirmaste estar de acuerdo con este pago</p>
         </div>
       )}
     </div>

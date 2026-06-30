@@ -141,6 +141,7 @@ class PayrollController extends Controller
                 $workers[] = [
                     'personal_id' => $pid,
                     'nombre' => $p->nombre,
+                    'telefono' => $p->telefono ?? '',
                     'rol' => $p->rol,
                     'sueldo_base' => (int) round($liq['sueldo_base']),
                     'dias_trabajados' => $liq['dias_trabajados'],
@@ -441,6 +442,39 @@ class PayrollController extends Controller
             'aprobado_por' => $snapshot->aprobado_por,
             'aprobado_at' => $snapshot->aprobado_at?->toIso8601String(),
         ]);
+    }
+
+    /**
+     * Mark a worker as confirmed in the snapshot.
+     * POST /nomina/{token}/confirm-worker
+     */
+    public function confirmWorker(Request $request, string $token): JsonResponse
+    {
+        $data = $request->validate([
+            'personal_id' => 'required|integer',
+        ]);
+
+        $snapshot = NominaSnapshot::where('token', $token)->firstOrFail();
+        $payload = $snapshot->data;
+
+        $found = false;
+        foreach (['ruta11', 'seguridad'] as $centro) {
+            foreach ($payload[$centro]['workers'] ?? [] as &$w) {
+                if (($w['personal_id'] ?? null) === (int) $data['personal_id']) {
+                    $w['confirmado'] = true;
+                    $found = true;
+                    break 2;
+                }
+            }
+        }
+
+        if (!$found) {
+            return response()->json(['success' => false, 'error' => 'Trabajador no encontrado en esta nómina'], 404);
+        }
+
+        $snapshot->update(['data' => $payload]);
+
+        return response()->json(['success' => true]);
     }
 
     /**
