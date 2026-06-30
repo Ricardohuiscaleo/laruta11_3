@@ -6,7 +6,7 @@ import { formatCLP, formatMonthES } from '@/lib/utils';
 import {
   ChevronLeft, ChevronRight, ChevronDown, ChevronUp,
   Loader2, Send, Mail, Trash2, DollarSign,
-  FileText, CreditCard, Share2,
+  FileText, CreditCard, Share2, Check,
 } from 'lucide-react';
 import type { SectionHeaderConfig } from '@/components/admin/AdminShell';
 
@@ -40,6 +40,7 @@ interface WorkerPayroll {
   personal_id: number;
   nombre: string;
   rol: string;
+  confirmado?: boolean;
   sueldo_base: number;
   dias_trabajados: number;
   reemplazos_hechos: number;
@@ -363,7 +364,14 @@ export default function NominaSection({ onHeaderConfig }: NominaSectionProps) {
                       <div className="w-4" />
                     )}
                     <div>
-                      <h3 className="font-semibold">{w.nombre}</h3>
+                      <h3 className="font-semibold inline-flex items-center gap-1">
+                        {w.nombre}
+                        {w.confirmado && (
+                          <span className="inline-flex items-center rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700">
+                            <Check className="h-2.5 w-2.5 mr-0.5" /> Confirmado
+                          </span>
+                        )}
+                      </h3>
                       <p className="text-xs text-gray-500 capitalize">{w.rol}</p>
                     </div>
                   </div>

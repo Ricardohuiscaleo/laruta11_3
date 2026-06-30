@@ -34,6 +34,19 @@ class PayrollController extends Controller
         $raw = $this->nominaService->getResumen($mes);
         $mesDate = $mes . '-01';
 
+        // Load worker confirmations from latest snapshot for this month
+        $snapshotConfirmados = [];
+        $latestSnapshot = NominaSnapshot::where('mes', $mes)->latest()->first();
+        if ($latestSnapshot) {
+            foreach (['ruta11', 'seguridad'] as $c) {
+                foreach ($latestSnapshot->data[$c]['workers'] ?? [] as $w) {
+                    if (!empty($w['confirmado'])) {
+                        $snapshotConfirmados[(int) $w['personal_id']] = true;
+                    }
+                }
+            }
+        }
+
         $result = [];
 
         foreach (['ruta11', 'seguridad'] as $centro) {
@@ -138,6 +151,11 @@ class PayrollController extends Controller
                     - $creditoPendiente
                 );
 
+                $confirmado = false;
+                if (isset($snapshotConfirmados[$pid])) {
+                    $confirmado = true;
+                }
+
                 $workers[] = [
                     'personal_id' => $pid,
                     'nombre' => $p->nombre,
@@ -158,6 +176,7 @@ class PayrollController extends Controller
                     'credito_r11_pendiente' => $creditoPendiente,
                     'r11_compras' => $r11Compras,
                     'total_a_pagar' => $totalAPagar,
+                    'confirmado' => $confirmado,
                 ];
             }
 
