@@ -191,7 +191,7 @@ PROMPT;
             'required' => ['description'],
         ];
 
-        $result = $this->callGemini($prompt, $schema, 1024);
+        $result = $this->callGemini($prompt, $schema, 2048);
 
         if (!$result) {
             throw new \RuntimeException('Gemini no respondió');
