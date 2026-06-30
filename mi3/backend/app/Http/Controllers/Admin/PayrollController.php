@@ -41,7 +41,7 @@ class PayrollController extends Controller
             ->whereNotNull('confirmado_at')
             ->pluck('confirmado_at', 'personal_id');
         foreach ($confirmaciones as $pid => $at) {
-            $snapshotConfirmados[(int) $pid] = true;
+            $snapshotConfirmados[(int) $pid] = $at;
         }
 
         $result = [];
@@ -149,8 +149,12 @@ class PayrollController extends Controller
                 );
 
                 $confirmado = false;
+                $confirmadoAt = null;
                 if (isset($snapshotConfirmados[$pid])) {
                     $confirmado = true;
+                    $confirmadoAt = $snapshotConfirmados[$pid] instanceof \Carbon\Carbon
+                        ? $snapshotConfirmados[$pid]->toIso8601String()
+                        : $snapshotConfirmados[$pid];
                 }
 
                 $workers[] = [
@@ -174,6 +178,7 @@ class PayrollController extends Controller
                     'r11_compras' => $r11Compras,
                     'total_a_pagar' => $totalAPagar,
                     'confirmado' => $confirmado,
+                    'confirmado_at' => $confirmadoAt,
                 ];
             }
 
