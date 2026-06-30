@@ -212,12 +212,24 @@ PROMPT;
         $candidates = $result['candidates'] ?? [];
         if (!empty($candidates[0]['content']['parts'][0]['text'])) {
             $parsed = json_decode($candidates[0]['content']['parts'][0]['text'], true);
-            $text = $parsed['description'] ?? '';
+            if (is_array($parsed)) {
+                $text = $parsed['description'] ?? $parsed['text'] ?? json_encode($parsed);
+            } else {
+                $text = $candidates[0]['content']['parts'][0]['text'];
+            }
+        } elseif (!empty($candidates[0]['content']['parts'][0])) {
+            // Might be structured output
+            $text = json_encode($candidates[0]['content']['parts'][0]);
+            Log::info('[RecipeAIService] Gemini structured part: ' . $text);
+        } else {
+            Log::warning('[RecipeAIService] Gemini no text in response: ' . json_encode($result, JSON_UNESCAPED_UNICODE));
         }
 
-        if (empty($text)) {
+        if (empty(trim($text))) {
             throw new \RuntimeException('Gemini devolvió descripción vacía');
         }
+
+        $text = trim($text);
 
         // Save to product
         $product->description = $text;
