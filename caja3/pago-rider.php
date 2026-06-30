@@ -193,6 +193,9 @@ $pageUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : '
                             <?php if ($order['order_number']): ?>
                                 <div style="font-weight:700;color:#374151;"><?= htmlspecialchars($order['order_number']) ?></div>
                             <?php endif; ?>
+                            <?php if ($order['order_created_at']): ?>
+                                <div style="font-size:10px;color:#9ca3af;"><?= (new DateTime($order['order_created_at'], new DateTimeZone('UTC')))->setTimezone(new DateTimeZone('Etc/GMT+3'))->format('d/m/Y H:i') ?> hs</div>
+                            <?php endif; ?>
                             <?php if ($order['customer_name']): ?>
                                 <div style="font-size:11px;color:#6b7280;"><?= htmlspecialchars($order['customer_name']) ?></div>
                             <?php endif; ?>
