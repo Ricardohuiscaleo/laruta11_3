@@ -1,7 +1,9 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { apiFetch } from '@/lib/api';
+import { getEcho } from '@/lib/echo';
+import { useAuth } from '@/hooks/useAuth';
 import { formatCLP, formatMonthES } from '@/lib/utils';
 import {
   ChevronLeft, ChevronRight, ChevronDown, ChevronUp,
@@ -188,6 +190,18 @@ export default function NominaSection({ onHeaderConfig }: NominaSectionProps) {
   }, [mes]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  // Listen for real-time nomina update events to refresh data
+  const { user } = useAuth();
+  useEffect(() => {
+    if (!user?.personal_id) return;
+    const echo = getEcho();
+    if (!echo) return;
+    const channel = echo.private(`admin.${user.personal_id}`);
+    const handler = (e: { section: string }) => { if (e.section === 'nomina') fetchData(); };
+    channel.listen('.admin.data.updated', handler);
+    return () => { try { (channel as any).unbind?.('.admin.data.updated', handler); } catch {} };
+  }, [user?.personal_id, fetchData]);
 
   /* ─── Actions ─── */
   const sendLiquidacion = async (personalId: number) => {

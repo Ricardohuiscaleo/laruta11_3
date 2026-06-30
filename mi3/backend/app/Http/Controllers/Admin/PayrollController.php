@@ -6,6 +6,7 @@ use App\Events\AdminDataUpdatedEvent;
 use App\Http\Controllers\Controller;
 use App\Models\AjusteCategoria;
 use App\Models\AjusteSueldo;
+use App\Models\NominaConfirmacion;
 use App\Models\NominaSnapshot;
 use App\Models\PagoNomina;
 use App\Models\Personal;
@@ -34,16 +35,15 @@ class PayrollController extends Controller
         $raw = $this->nominaService->getResumen($mes);
         $mesDate = $mes . '-01';
 
-        // Load worker confirmations from latest snapshot for this month
+        // Load worker confirmations from nomina_confirmaciones table
         $snapshotConfirmados = [];
         $latestSnapshot = NominaSnapshot::where('mes', $mes)->latest()->first();
         if ($latestSnapshot) {
-            foreach (['ruta11', 'seguridad'] as $c) {
-                foreach ($latestSnapshot->data[$c]['workers'] ?? [] as $w) {
-                    if (!empty($w['confirmado'])) {
-                        $snapshotConfirmados[(int) $w['personal_id']] = true;
-                    }
-                }
+            $confirmaciones = NominaConfirmacion::where('nomina_snapshot_id', $latestSnapshot->id)
+                ->whereNotNull('confirmado_at')
+                ->pluck('confirmado_at', 'personal_id');
+            foreach ($confirmaciones as $pid => $at) {
+                $snapshotConfirmados[(int) $pid] = true;
             }
         }
 
@@ -492,6 +492,22 @@ class PayrollController extends Controller
         }
 
         $snapshot->update(['data' => $payload]);
+
+        // Write to dedicated table for real-time queries
+        NominaConfirmacion::updateOrCreate(
+            [
+                'nomina_snapshot_id' => $snapshot->id,
+                'personal_id' => (int) $data['personal_id'],
+            ],
+            ['confirmado_at' => now()],
+        );
+
+        // Broadcast for real-time admin updates
+        try {
+            broadcast(new AdminDataUpdatedEvent('nomina', 'confirmado'));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Broadcast confirmWorker: ' . $e->getMessage());
+        }
 
         return response()->json(['success' => true]);
     }
