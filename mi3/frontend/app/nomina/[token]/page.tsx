@@ -197,9 +197,11 @@ export default function NominaPublicPage({ params }: { params: { token: string }
         </h1>
         <div className="inline-flex items-center gap-1.5 mt-1">
           <p className="text-xs text-gray-400">La Ruta 11{fecha ? ` — ${fecha}` : ''}</p>
-          <button onClick={handleShare} title="Compartir" className="inline-flex items-center justify-center h-5 w-5 rounded-full text-gray-400 hover:text-amber-600 hover:bg-amber-50 transition-colors">
-            <Share2 className="h-3.5 w-3.5" />
-          </button>
+          {!singleWorker && (
+            <button onClick={handleShare} title="Compartir" className="inline-flex items-center justify-center h-5 w-5 rounded-full text-gray-400 hover:text-amber-600 hover:bg-amber-50 transition-colors">
+              <Share2 className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
         {copied && (
           <div className="absolute left-1/2 -translate-x-1/2 mt-1 px-3 py-1 rounded-full bg-gray-800 text-white text-[11px] whitespace-nowrap shadow-lg">
