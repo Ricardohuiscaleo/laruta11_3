@@ -481,6 +481,7 @@ const CheckoutApp = ({ onClose }) => {
 
   // Cashback solo aplica al subtotal de productos (no al delivery ni extras)
   const subtotalAfterDiscounts = cartSubtotal - effectiveDiscountAmount - cashbackAmount;
+  const maxCashback = Math.min(walletBalance, Math.max(0, subtotalAfterDiscounts));
   const finalTotal = subtotalAfterDiscounts + finalDeliveryCost + deliveryExtrasTotal + cardDeliverySurcharge;
 
    const validateForm = () => {
@@ -1602,6 +1603,54 @@ const CheckoutApp = ({ onClose }) => {
                       <span className="font-semibold text-green-600">-${discountAmount.toLocaleString('es-CL')}</span>
                     </div>
                   )}
+
+                  {/* ─── Cashback ─── */}
+                  {user && walletBalance > 0 && (
+                    <div className="bg-emerald-50 -mx-2 px-3 py-2.5 rounded-lg space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <Wallet size={15} className="text-emerald-600" />
+                          <span className="text-sm font-semibold text-emerald-800">Cashback disponible</span>
+                        </div>
+                        <span className="text-sm font-bold text-emerald-700 text-right">${walletBalance.toLocaleString('es-CL')}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="range"
+                          min={0}
+                          max={maxCashback}
+                          step={10}
+                          value={cashbackAmount}
+                          onChange={e => setCashbackAmount(parseInt(e.target.value) || 0)}
+                          className="flex-1 h-2 rounded-full appearance-none cursor-pointer accent-emerald-600 bg-emerald-200"
+                        />
+                        <div className="flex items-center gap-1 shrink-0">
+                          <span className="text-xs text-gray-500">$</span>
+                          <input
+                            type="number"
+                            min={0}
+                            max={maxCashback}
+                            step={10}
+                            value={cashbackAmount}
+                            onChange={e => setCashbackAmount(Math.min(Math.max(0, parseInt(e.target.value) || 0), maxCashback))}
+                            className="w-20 text-center text-sm font-semibold bg-white border border-emerald-300 rounded-md px-1.5 py-1 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-emerald-600">Mín. $500 · múltiplos de $10</span>
+                        {cashbackAmount > 0 && (
+                          <button
+                            onClick={() => setCashbackAmount(0)}
+                            className="text-red-500 hover:text-red-700 font-medium"
+                          >
+                            Quitar
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Subtotal productos:</span>
                     <span className="text-sm font-semibold text-gray-900">${(cartSubtotal - effectiveDiscountAmount - cashbackAmount).toLocaleString('es-CL')}</span>
